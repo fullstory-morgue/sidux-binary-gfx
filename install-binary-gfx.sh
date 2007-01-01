@@ -5,8 +5,9 @@
 #
 # Changes:
 # 	16.12.2006 Initial Version by Andreas Weber 0.1 alpha
-#
-#
+#	01.01.2007 Update diabled.
+#	01.01.2007 nvidia-legacy driver added
+#	01.01.2007 fix for config.h removed. Not needed anymore.
 #
 
 error() 
@@ -89,26 +90,6 @@ prep()
 		# Running m-a prepare
 		m-a prepare $KMOD 1>> $LOG 2>> $LOG || error 252
 	fi
-	
-	# For NVIDIA we have to take care about a missing config.h. This is for Driver 
-	# Version 1.0.8776-3 only.
-	if [ $KMOD = "nvidia" ]; then
-		# Get Version
-		NV_VERSION=$(dpkg -l | grep nvidia-kernel-source | awk '{print $3}')
-
-		# Fixes for NVIDIA 1.0.8776-3
-		if [ $NV_VERSION = "1.0.8776-3" ]; then
-			# Fix for missing config.h
-	cat > /usr/src/linux-headers-$KERNEL/include/linux/config.h << "EOF"
-#ifndef _LINUX_CONFIG_H
-#define _LINUX_CONFIG_H
-#include <linux/autoconf.h>
-#endif
-EOF
-
-		fi
-	fi
-
 }
 
 build() {
@@ -198,27 +179,27 @@ uname -r | grep "\-slh64\-"  > /dev/null && SLH_KERNEL="TRUE"
 # we can append the -b Parameter
 VERBOSE=0
 UPDATE=0
-while getopts vub:h opt 
+while getopts vb:h opt # "u" is removed to make sure the manual update isn't working
 do
  case $opt in
    # We can run the Script in verbose Mode to see more output and the logfile after the execution.	
    v) VERBOSE=1
    	;;
    # We can update the Script to the latest Version by using -u	
-   u) wget -NqO /usr/local/bin/$ME $UPDATE_URL || error 247
-      wget -NqO /usr/local/bin/detect_nvcards.sh $DATABASE_URL || error 247
-      chmod +x /usr/local/bin/$ME
-      chmod +x /usr/local/bin/detect_nvcards.sh
-      echo "Update done" 
-      exit 0
-      	;;
+   #u) wget -NqO /usr/local/bin/$ME $UPDATE_URL || error 247
+   #   wget -NqO /usr/local/bin/detect_nvcards.sh $DATABASE_URL || error 247
+   #   chmod +x /usr/local/bin/$ME
+   #   chmod +x /usr/local/bin/detect_nvcards.sh
+   #   echo "Update done" 
+   #   exit 0
+   #   	;;
    # We are able to just build the Packages by using -b <Name of the Module>.
    b) echo "Building $OPTARG"
       KMOD=$OPTARG
       MODTEST="FALSE"
       [ $KMOD = "nvidia" ] && MODTEST="TRUE"
       [ $KMOD = "fglrx" ] && MODTEST="TRUE"
-      [ $KMOD = "nvidia-legacy" ] && MODTEST="TRUE" ;KMOD="nvidia-kernel-legacy"
+      [ $KMOD = "nvidia-legacy" ] && MODTEST="TRUE" && KMOD="nvidia-kernel-legacy"
       [ $MODTEST = "FALSE" ] && error 249
       create_log
       prep
@@ -228,7 +209,7 @@ do
    # Of course we have a help Option.	
    \?|h) echo "Usage $0 [options] " >&2
        	echo " -v	Verbose" >&2
-	echo " -u	Update Script" >&2
+	# echo " -u	Update Script" >&2 Update is not recommended to use as this Script is packaged.
 	echo " -b MOD	Build only" >&2
 	echo ""
 	echo "Valid MOD's are nvidia, nvidia-legacy and fglrx."
@@ -252,7 +233,7 @@ if [ $KMOD = "nvidia" ]; then
 		wget -NqO $DATABASE $DATABASE_URL || error 247
 	fi
 
-	wget -NqO $DATABASE $DATABASE_URL
+	# wget -NqO $DATABASE $DATABASE_URL # Updating the Script is disabled by default.
 	chmod +x $DATABASE
 	
 	if [ -f $DATABASE ]; then

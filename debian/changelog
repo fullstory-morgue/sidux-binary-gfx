@@ -1,6 +1,9 @@
 sidux-binary-gfx (1.0-1) unstable; urgency=low
 
   * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+  * Update diabled.
+  * nvidia-legacy driver added
+  * fix for config.h removed. Not needed anymore.
 
- -- Andreas Weber <andreas@it-weber.com>  Mon,  1 Jan 2007 16:28:24 +0100
+ -- Andreas Weber <andreas@it-weber.com>  Mon,  1 Jan 2007 17:17:18 +0100
 
