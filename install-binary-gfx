@@ -97,6 +97,9 @@ build() {
 	# We will create the Package now by using m-a. If the build fails we get the 
 	# Exitcode 250. 
 	echo "* Building $KMOD Module."
+	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
+		ln -s /usr/src/linux/include/linux/autoconf.h /usr/src/linux/include/linux/config.h 1>> $LOG 2>> $LOG
+	fi
 	m-a a-b -i $KMOD 1>> $LOG 2>> $LOG || error 250
 	echo "* $KMOD build successfull."
 }
