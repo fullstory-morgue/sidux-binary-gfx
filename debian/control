@@ -1,5 +1,5 @@
 Source: sidux-binary-gfx
-Section: non-free/x11
+Section: contrib/x11
 Priority: extra
 Maintainer: Andreas Weber <andreas@it-weber.com>
 Build-Depends: cdbs, debhelper (>= 5), dpatch
