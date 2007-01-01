@@ -109,7 +109,11 @@ install_deb()
 	# The build should be fine and we are installing the created deb right now.
 	# First we have to get the Name of the File.
 	cd /usr/src
-	DEB=$(ls $KMOD-kernel-$KERNEL*.deb)
+	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
+		DEB=$(ls $KMOD-$KERNEL*.deb)
+	else
+		DEB=$(ls $KMOD-kernel-$KERNEL*.deb)
+	fi
 	# Go back to the Path we were comming.
 	cd $OLDPATH
 	echo "* Installing $DEB"
