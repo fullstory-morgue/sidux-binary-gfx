@@ -1,2 +1,2 @@
-detect_nvcard.sh  /usr/sbin/
-install-binary-gfx.sh /usr/sbin/
+install-binary-gfx	usr/sbin/
+detect_nvcard		usr/share/sidux-binary-gfx/

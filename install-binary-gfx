@@ -133,23 +133,23 @@ write_xorg()
 	
 	# Changing entry's for nvidia using Perl oneliners.
 	if [ $KMOD = "nvidia" ]; then
-		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver      "nvidia"/g' $XORGCFG
-		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver      "nvidia"/g' $XORGCFG 
-		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver      "nvidia"/g' $XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver\t"nvidia"/g'	$XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"nvidia"/g'	$XORGCFG 
+		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
 	fi
 	
 	# Changing entry's for nvidia-legacy using Perl oneliners.
 	if [ $KMOD = "nvidia-kernel-legacy" ]; then
-		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver      "nvidia"/g' $XORGCFG
-		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver      "nvidia"/g' $XORGCFG
-		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver      "nvidia"/g' $XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver\t"nvidia"/g'	$XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"nvidia"/g'	$XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
 	fi
 
 	# Changing entry's for fglrx using Perl oneliners.
 	if [ $KMOD == "fglrx" ]; then
-		perl -pi -e 's/^[\s]*Driver\s*"radeon"/\tDriver      "fglrx"/g' $XORGCFG 
-		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver      "fglrx"/g' $XORGCFG
-		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver      "fglrx"/g' $XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"radeon"/\tDriver\t"fglrx"/g'	$XORGCFG 
+		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"fglrx"/g'	$XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"fglrx"/g'	$XORGCFG
 	fi
 }
 
@@ -263,6 +263,7 @@ if [ $VERBOSE = "1" ]; then
 fi
 
 # We are done :)
-echo "Sript finished."
+echo "Script finished."
 
 #END
+

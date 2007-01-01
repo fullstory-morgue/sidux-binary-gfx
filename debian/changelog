@@ -1,9 +1,18 @@
-sidux-binary-gfx (1.0-1) unstable; urgency=low
+sidux-binary-gfx (1.0.0) unstable; urgency=low
 
-  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+  [ Andreas Weber ]
+  * Initial release.
   * Update diabled.
   * nvidia-legacy driver added
   * fix for config.h removed. Not needed anymore.
 
- -- Andreas Weber <andreas@it-weber.com>  Mon,  1 Jan 2007 17:17:18 +0100
+  [ Stefan Lippers-Hollmann ]
+  * adapt package version for native packaging.
+  * remove dh_make templates from debian/.
+  * move detect_nvidia to /usr/share/sidux-binary-gfx/, remove auto-update
+    completely.
+  * strip *.sh suffix.
+  * fix typo.
+
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Mon,  1 Jan 2007 19:07:24 +0100
 

@@ -1,12 +1,12 @@
 Source: sidux-binary-gfx
-Section: admin
-Priority: optional
+Section: non-free/x11
+Priority: extra
 Maintainer: Andreas Weber <andreas@it-weber.com>
-Build-Depends: cdbs, cdbs, debhelper (>= 5)
+Build-Depends: cdbs, debhelper (>= 5), dpatch
 Standards-Version: 3.7.2
 
 Package: sidux-binary-gfx
-Architecture: any
+Architecture: all
 Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: build and install nvidia/ati kernel modules
  This package will help user to create and install nvidia/ati binary drivers

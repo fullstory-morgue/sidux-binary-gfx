@@ -227,3 +227,4 @@ fi
 echo "Detected Card: $NAME"
 echo "Driver: $DRIVER"
 echo "PCI ID: $ID3"
+
