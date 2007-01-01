@@ -1,0 +1,287 @@
+#!/bin/sh
+# Author: Andreas Weber <andreas@it-weber.com>
+# Date: 16.12.2006
+# Purpose: Script to install binary nvidia/ati drivers for sidux
+#
+# Changes:
+# 	16.12.2006 Initial Version by Andreas Weber 0.1 alpha
+#
+#
+#
+
+error() 
+{
+	# This Funktion is printing out all Error Messages. 
+	# This can also be used as the Referenz for the Exit Codes.
+	ERR_C=$1
+	case $ERR_C in
+		254) ERR_D="No NVIDIA/ATI Card found !";;
+		253) ERR_D="Kernel Headers not installed !";;
+		252) ERR_D="m-a prepare failed !";;
+		251) ERR_D="failed to install linux-headers !";;
+		250) ERR_D="Build failed (check $LOG) !";;
+		249) ERR_D="Wrong argument. Valid modules are nvidia or fglrx. !";;
+		248) ERR_D="Package cannot be installed.";;
+		247) ERR_D="Cannot update the Script.";;
+		246) ERR_D="Database Script not found.";;
+		*) ERR_D="Unexpected Error !";;
+	esac
+	echo "! ERROR: ($ERR_C) $ERR_D"
+	echo "$DATE ERROR: ($ERR_C) $ERR_D" >> $LOG
+	echo ""
+	# If we are in verbose Mode print out the Log File.
+	[ $VERBOSE = 1 ] && cat $LOG
+	exit $ERR_C
+
+}
+
+create_log() 
+{
+	# This Funktion is creating a new Logfile. It will overwrite previous Versions.
+	LOG="/var/log/sidux-$KMOD-installer.log"
+	# Delete old Logfile if exist.
+	rm -f $LOG 2&> /dev/null
+	# Create the new File and write basic Information.
+	touch $LOG
+	echo "Running $ME"
+	echo "Script to install binary Drivers for NVIDIA/ATI Grafik Cards"
+	echo ""
+	echo "Script started: $DATE" >> $LOG
+	echo "Detected Card: $KMOD" >> $LOG
+	echo "Installed Kernel: $KERNEL" >> $LOG
+	echo "Arch: $ARCH" >> $LOG
+	echo "" >> $LOG
+}
+
+prep() 
+{
+	# This Funktion will call m-a prepare and make sure the Kernel
+	# Headers and other required Packages are  installed.
+	# Write Log entry
+	echo "$DATE Prepare Process started." >> $LOG
+	# Test if we are running a SLH Kernel. That is important because the Kernel isn't 
+	# Part of any Apt Repository. We have to have manually Funktion here to install 
+	# the Headers.
+	if [ $SLH_KERNEL = "TRUE" ]; then
+		# If Headers are already installed we are fine to run m-a prepare
+		if [ -d /usr/src/linux-headers-$KERNEL ]; then
+			echo "* Kernel Headers found."
+			echo "* Running module-assistant prepare."
+			m-a prepare $KMOD 1>> $LOG 2>> $LOG  || error 252
+		else
+			# If Headers are not installed we stop with the error Message
+			# 253. User must install the Headers manually. There is a plan
+			# to have this Script installing the Headers manually by using
+			# slh-source.sh. Comming soon.
+			error 253
+		fi
+	else
+		# If we don't have a SLH Kernel we are checking if Headers are already
+		# installed. If not the Script will try to install it. If we can't install 
+		# the Headers by using apt (maybe a Users Kernel) we will exit the Script 
+		# with Error Code 252
+		if [ -d /usr/src/linux-headers-$KERNEL ]; then
+			apt-get install linux-headers-$KERNEL 1>> $LOG 2>> $LOG || error 252
+		fi
+		# We check here again if Headers are there. Just in case apt is reporting
+		# exit code 0 but something is still wrong.
+		[ -d /usr/src/linux-headers-$KERNEL ] || error 253
+		# Running m-a prepare
+		m-a prepare $KMOD 1>> $LOG 2>> $LOG || error 252
+	fi
+	
+	# For NVIDIA we have to take care about a missing config.h. This is for Driver 
+	# Version 1.0.8776-3 only.
+	if [ $KMOD = "nvidia" ]; then
+		# Get Version
+		NV_VERSION=$(dpkg -l | grep nvidia-kernel-source | awk '{print $3}')
+
+		# Fixes for NVIDIA 1.0.8776-3
+		if [ $NV_VERSION = "1.0.8776-3" ]; then
+			# Fix for missing config.h
+	cat > /usr/src/linux-headers-$KERNEL/include/linux/config.h << "EOF"
+#ifndef _LINUX_CONFIG_H
+#define _LINUX_CONFIG_H
+#include <linux/autoconf.h>
+#endif
+EOF
+
+		fi
+	fi
+
+}
+
+build() {
+	# We will create the Package now by using m-a. If the build fails we get the 
+	# Exitcode 250. 
+	echo "* Building $KMOD Module."
+	m-a a-b -i $KMOD 1>> $LOG 2>> $LOG || error 250
+	echo "* $KMOD build successfull."
+}
+
+install_deb() 
+{
+	# The build should be fine and we are installing the created deb right now.
+	# First we have to get the Name of the File.
+	cd /usr/src
+	DEB=$(ls $KMOD-kernel-$KERNEL*.deb)
+	# Go back to the Path we were comming.
+	cd $OLDPATH
+	echo "* Installing $DEB"
+	# Install the deb.
+	dpkg -i /usr/src/$DEB 1>> $LOG 2>> $LOG
+	if [ ! "$?" = "0" ]; then
+		# If exitcode from dpkg is not 0 maybe we have to install dependencies.
+		# We try an apt-get -f install.
+		apt-get -f install 1>> $LOG 2>> $LOG || error 248
+	fi	
+}
+
+write_xorg() 
+{
+	# Changing the xorg.conf to use our brandnew installed Driver.
+	# We are creating a Backup by using date and time for the 
+	# Filename. Just in case the User will run the Script several
+	# Times he will still be able to restore any of the Backups.
+	EXTENSION=$(date +%d%m%y-%H%M)
+	XORGCFG="/etc/X11/xorg.conf"
+	XORGBKP="/etc/X11/xorg.$EXTENSION"
+	# Creating the Backup
+	cp $XORGCFG $XORGBKP
+	echo "* Original $XORGCFG saved as $XORGBKP."
+	
+	# Changing entry's for nvidia using Perl oneliners.
+	if [ $KMOD = "nvidia" ]; then
+		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver      "nvidia"/g' $XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver      "nvidia"/g' $XORGCFG 
+		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver      "nvidia"/g' $XORGCFG
+	fi
+	
+	# Changing entry's for nvidia-legacy using Perl oneliners.
+	if [ $KMOD = "nvidia-kernel-legacy" ]; then
+		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver      "nvidia"/g' $XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver      "nvidia"/g' $XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver      "nvidia"/g' $XORGCFG
+	fi
+
+	# Changing entry's for fglrx using Perl oneliners.
+	if [ $KMOD == "fglrx" ]; then
+		perl -pi -e 's/^[\s]*Driver\s*"radeon"/\tDriver      "fglrx"/g' $XORGCFG 
+		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver      "fglrx"/g' $XORGCFG
+		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver      "fglrx"/g' $XORGCFG
+	fi
+}
+
+# We have to be root. Oherwise we exit with exitcode 1
+if [ ! $UID = "0" ]; then
+	echo "You must be root to run this Script!"
+	exit 1
+fi
+
+# Initializing basic Variables
+KMOD="none"
+ARCH=$(uname -m)
+KERNEL=$(uname -r)
+SLH_KERNEL="FALSE"
+DATE=$(date +%D\ %T)
+ME=$(basename $0)
+# The update url can be changed here
+UPDATE_URL="http://it-weber.dyndns.org/files/$ME"
+DATABASE_URL="http://it-weber.dyndns.org/files/detect_nvcards.sh"
+DATABASE="/usr/local/bin/detect_nvcards.sh"
+# Do we have one of the wonderful SLH Kernel's 
+uname -r | grep "\-slh\-" > /dev/null && SLH_KERNEL="TRUE"
+uname -r | grep "\-slh64\-"  > /dev/null && SLH_KERNEL="TRUE"
+
+# We can have Parameters. By default without Parameters the Script will 
+# do all Operations automatically. If we just want to build the Package
+# we can append the -b Parameter
+VERBOSE=0
+UPDATE=0
+while getopts vub:h opt 
+do
+ case $opt in
+   # We can run the Script in verbose Mode to see more output and the logfile after the execution.	
+   v) VERBOSE=1
+   	;;
+   # We can update the Script to the latest Version by using -u	
+   u) wget -NqO /usr/local/bin/$ME $UPDATE_URL || error 247
+      wget -NqO /usr/local/bin/detect_nvcards.sh $DATABASE_URL || error 247
+      chmod +x /usr/local/bin/$ME
+      chmod +x /usr/local/bin/detect_nvcards.sh
+      echo "Update done" 
+      exit 0
+      	;;
+   # We are able to just build the Packages by using -b <Name of the Module>.
+   b) echo "Building $OPTARG"
+      KMOD=$OPTARG
+      MODTEST="FALSE"
+      [ $KMOD = "nvidia" ] && MODTEST="TRUE"
+      [ $KMOD = "fglrx" ] && MODTEST="TRUE"
+      [ $KMOD = "nvidia-legacy" ] && MODTEST="TRUE" ;KMOD="nvidia-kernel-legacy"
+      [ $MODTEST = "FALSE" ] && error 249
+      create_log
+      prep
+      build
+      exit 0
+      	;;
+   # Of course we have a help Option.	
+   \?|h) echo "Usage $0 [options] " >&2
+       	echo " -v	Verbose" >&2
+	echo " -u	Update Script" >&2
+	echo " -b MOD	Build only" >&2
+	echo ""
+	echo "Valid MOD's are nvidia, nvidia-legacy and fglrx."
+       	exit 0
+   	;;
+  esac
+done
+
+# Try to identify which kind of GFX Board we have
+lspci | grep nVidia > /dev/null && KMOD="nvidia"  
+lspci | grep ATI > /dev/null && KMOD="fglrx"
+
+# If we still don't know the GFX Board we will exit with exitcode 254.
+# User can still build the Modules by using -b <Name of the Module>.
+if [ $KMOD = "none" ]; then
+	error 254
+fi
+
+if [ $KMOD = "nvidia" ]; then
+	if [ ! -f $DATABASE ]; then
+		wget -NqO $DATABASE $DATABASE_URL || error 247
+	fi
+
+	wget -NqO $DATABASE $DATABASE_URL
+	chmod +x $DATABASE
+	
+	if [ -f $DATABASE ]; then
+        	. $DATABASE
+	else
+		error 246
+	fi
+
+	case $DRIVER in
+		legacy) NVSRC="nvidia-kernel-legacy-source"; KMOD="nvidia-kernel-legacy";;
+		nvidia) NVSRC="nvidia-kernel-source";;
+		nv) NVSRC="none";;
+		*) NVSRC="none";;
+	esac
+fi
+
+# We call all the function's to install the Driver automatically
+create_log
+prep
+build
+install_deb
+write_xorg
+
+# If we are using -v we will Print out the Log now.
+if [ $VERBOSE = "1" ]; then
+	cat $LOG
+fi
+
+# We are done :)
+echo "Sript finished."
+
+#END

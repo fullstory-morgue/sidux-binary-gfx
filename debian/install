@@ -1,0 +1,2 @@
+detect_nvcard.sh  /usr/sbin/
+install-binary-gfx.sh /usr/sbin/
