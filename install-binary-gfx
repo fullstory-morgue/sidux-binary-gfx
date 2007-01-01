@@ -23,12 +23,13 @@ error()
 		250) ERR_D="Build failed (check $LOG) !";;
 		249) ERR_D="Wrong argument. Valid modules are nvidia or fglrx. !";;
 		248) ERR_D="Package cannot be installed.";;
-		247) ERR_D="Cannot update the Script.";;
 		246) ERR_D="Database Script not found.";;
 		*) ERR_D="Unexpected Error !";;
 	esac
 	echo "! ERROR: ($ERR_C) $ERR_D"
-	echo "$DATE ERROR: ($ERR_C) $ERR_D" >> $LOG
+	if [ ! -z $LOG ]; then # If we get an error before Log is created we just give it out to stdout.
+		echo "$DATE ERROR: ($ERR_C) $ERR_D" >> $LOG
+	fi
 	echo ""
 	# If we are in verbose Mode print out the Log File.
 	[ $VERBOSE = 1 ] && cat $LOG
@@ -166,10 +167,7 @@ KERNEL=$(uname -r)
 SLH_KERNEL="FALSE"
 DATE=$(date +%D\ %T)
 ME=$(basename $0)
-# The update url can be changed here
-UPDATE_URL="http://it-weber.dyndns.org/files/$ME"
-DATABASE_URL="http://it-weber.dyndns.org/files/detect_nvcards.sh"
-DATABASE="/usr/local/bin/detect_nvcards.sh"
+DATABASE="/usr/share/sidux-binary-gfx/detect_nvcard"
 # Do we have one of the wonderful SLH Kernel's 
 uname -r | grep "\-slh\-" > /dev/null && SLH_KERNEL="TRUE"
 uname -r | grep "\-slh64\-"  > /dev/null && SLH_KERNEL="TRUE"
@@ -185,15 +183,6 @@ do
    # We can run the Script in verbose Mode to see more output and the logfile after the execution.	
    v) VERBOSE=1
    	;;
-   # We can update the Script to the latest Version by using -u	
-   #u) wget -NqO /usr/local/bin/$ME $UPDATE_URL || error 247
-   #   wget -NqO /usr/local/bin/detect_nvcards.sh $DATABASE_URL || error 247
-   #   chmod +x /usr/local/bin/$ME
-   #   chmod +x /usr/local/bin/detect_nvcards.sh
-   #   echo "Update done" 
-   #   exit 0
-   #   	;;
-   # We are able to just build the Packages by using -b <Name of the Module>.
    b) echo "Building $OPTARG"
       KMOD=$OPTARG
       MODTEST="FALSE"
@@ -209,7 +198,6 @@ do
    # Of course we have a help Option.	
    \?|h) echo "Usage $0 [options] " >&2
        	echo " -v	Verbose" >&2
-	# echo " -u	Update Script" >&2 Update is not recommended to use as this Script is packaged.
 	echo " -b MOD	Build only" >&2
 	echo ""
 	echo "Valid MOD's are nvidia, nvidia-legacy and fglrx."
@@ -229,13 +217,6 @@ if [ $KMOD = "none" ]; then
 fi
 
 if [ $KMOD = "nvidia" ]; then
-	if [ ! -f $DATABASE ]; then
-		wget -NqO $DATABASE $DATABASE_URL || error 247
-	fi
-
-	# wget -NqO $DATABASE $DATABASE_URL # Updating the Script is disabled by default.
-	chmod +x $DATABASE
-	
 	if [ -f $DATABASE ]; then
         	. $DATABASE
 	else
