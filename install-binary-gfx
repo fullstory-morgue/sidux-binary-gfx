@@ -8,6 +8,7 @@
 #	01.01.2007 Update diabled.
 #	01.01.2007 nvidia-legacy driver added
 #	01.01.2007 fix for config.h removed. Not needed anymore.
+#	08.01.2007 apt-get update added to make sure we can install the required sources
 #
 
 error() 
@@ -24,6 +25,7 @@ error()
 		249) ERR_D="Wrong argument. Valid modules are nvidia or fglrx. !";;
 		248) ERR_D="Package cannot be installed.";;
 		246) ERR_D="Database Script not found.";;
+		245) ERR_D="apt-get update failed.";;
 		*) ERR_D="Unexpected Error !";;
 	esac
 	echo "! ERROR: ($ERR_C) $ERR_D"
@@ -69,6 +71,9 @@ prep()
 		if [ -d /usr/src/linux-headers-$KERNEL ]; then
 			echo "* Kernel Headers found."
 			echo "* Running module-assistant prepare."
+			# We need to run a apt-get update to make sure we can fetch
+			# the required source
+			apt-get update 1>> $LOG 2>> $LOG || error 245
 			m-a prepare $KMOD 1>> $LOG 2>> $LOG  || error 252
 		else
 			# If Headers are not installed we stop with the error Message
