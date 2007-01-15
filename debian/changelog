@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.2) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.2) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * apt-get update added.
   * Debian apt Variables for silent mode added
   * Installation and upgrade function added (via debian Package)
