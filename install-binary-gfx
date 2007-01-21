@@ -26,6 +26,7 @@ error()
 		248) ERR_D="Package cannot be installed.";;
 		246) ERR_D="Database Script not found.";;
 		245) ERR_D="apt-get update failed.";;
+		244) ERR_D="m-a update failed.";;
 		*) ERR_D="Unexpected Error !";;
 	esac
 	echo "! ERROR: ($ERR_C) $ERR_D"
@@ -68,6 +69,7 @@ prep()
 		if [ -d /usr/src/linux-headers-$KERNEL ]; then
 			echo "* Kernel Headers found."
 			echo "* Running module-assistant prepare."
+			m-a update 1>> $LOG 2>> $LOG || error 244
 			DEBIAN_FRONTEND="noninteractive" \
 			DEBIAN_PRIORITY="critical" \
 			DEBCONF_NOWARNINGS="yes" \
@@ -88,12 +90,13 @@ prep()
 			DEBIAN_FRONTEND="noninteractive" \
 			DEBIAN_PRIORITY="critical" \
 			DEBCONF_NOWARNINGS="yes" \
-			apt-get install linux-headers-$KERNEL 1>> $LOG 2>> $LOG || error 252
+			apt-get -y install linux-headers-$KERNEL 1>> $LOG 2>> $LOG || error 252
 		fi
 		# We check here again if Headers are there. Just in case apt is reporting
 		# exit code 0 but something is still wrong.
 		[ -d /usr/src/linux-headers-$KERNEL ] || error 253
 		# Running m-a prepare
+		m-a update 1>> $LOG 2>> $LOG || error 244
 		DEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
 		DEBCONF_NOWARNINGS="yes" \
@@ -136,7 +139,7 @@ install_deb()
 		DEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
 		DEBCONF_NOWARNINGS="yes" \
-		apt-get -f install 1>> $LOG 2>> $LOG || error 248
+		apt-get -fy install 1>> $LOG 2>> $LOG || error 248
 	fi	
 }
 
@@ -259,7 +262,7 @@ do
       DEBIAN_FRONTEND="noninteractive" \
       DEBIAN_PRIORITY="critical" \
       DEBCONF_NOWARNINGS="yes" \
-      apt-get upgrade sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
+      apt-get -y upgrade sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
       sources_restore
       exit 0
    	;;
