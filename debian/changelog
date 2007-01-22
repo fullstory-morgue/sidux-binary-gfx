@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.3) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.3) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * m-a update added as it is needed
   * apt-get fixed to avoid interactive actions
 
