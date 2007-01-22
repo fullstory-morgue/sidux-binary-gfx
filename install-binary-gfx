@@ -213,7 +213,7 @@ sources_backup() {
 deb http://ftp.debian.org/debian/ sid main contrib non-free
 deb http://sidux.net/debian/ sid main fix.main contrib non-free
 EOF
-	apt-get update 1>> $LOG 2>> $LOG || error 245
+	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
 sources_restore() {
@@ -221,18 +221,18 @@ sources_restore() {
 }
 
 clean_up() {
-	apt-get update 1>> $LOG 2>> $LOG || error 245
+	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
 install_me() {
-	apt-get install sidux-binary-gfx 1>> $LOG 2>> $LOG
+	apt-get install sidux-binary-gfx 1>> /dev/null 2>> /dev/null 
 	/usr/sbin/install-binary-gfx
 	exit 0
 }
 
 nuke_me() {
 	[ -f /etc/apt/sources.backup ] && cp /etc/apt/sources.backup /etc/apt/sources.list
-	rm -f /etc/apt/sources.backup 1>> $LOG 2>> $LOG
+	rm -f /etc/apt/sources.backup 1>> /dev/null 2>> /dev/null 
 }
 
 # We have to be root. Oherwise we exit with exitcode 1
@@ -309,7 +309,7 @@ done
 lspci | grep nVidia > /dev/null && KMOD="nvidia"  
 lspci | grep ATI > /dev/null && KMOD="fglrx"
 sources_backup
-dpkg -l | grep sidux-binary-gfx 1>> $LOG 2>> $LOG || install_me 
+dpkg -l | grep sidux-binary-gfx 1>> /dev/null 2>> /dev/null || install_me 
 
 # If we still don't know the GFX Board we will exit with exitcode 254.
 # User can still build the Modules by using -b <Name of the Module>.
