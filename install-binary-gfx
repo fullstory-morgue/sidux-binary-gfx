@@ -129,18 +129,6 @@ build() {
 	DEBIAN_PRIORITY="critical" \
 	DEBCONF_NOWARNINGS="yes" \
 	m-a a-b -i $KMOD 1>> $LOG 2>> $LOG || error 250
-	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
-		DEBIAN_FRONTEND="noninteractive" \
-		DEBIAN_PRIORITY="critical" \
-		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-glx || error 243
-	fi
-	if [ "$KMOD" = "nvidia" ]; then
-		DEBIAN_FRONTEND="noninteractive" \
-		DEBIAN_PRIORITY="critical" \
-		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-glx || error 243
-	fi
 	echo "* $KMOD build successfull."
 }
 
@@ -167,6 +155,18 @@ install_deb()
 		DEBCONF_NOWARNINGS="yes" \
 		apt-get -fy install 1>> $LOG 2>> $LOG || error 248
 	fi	
+	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
+		DEBIAN_FRONTEND="noninteractive" \
+		DEBIAN_PRIORITY="critical" \
+		DEBCONF_NOWARNINGS="yes" \
+		apt-get -fy install nvidia-glx || error 243
+	fi
+	if [ "$KMOD" = "nvidia" ]; then
+		DEBIAN_FRONTEND="noninteractive" \
+		DEBIAN_PRIORITY="critical" \
+		DEBCONF_NOWARNINGS="yes" \
+		apt-get -fy install nvidia-glx || error 243
+	fi
 }
 
 write_xorg() 
