@@ -159,7 +159,7 @@ install_deb()
 		DEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
 		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-glx || error 243
+		apt-get -fy install nvidia-glx-legacy || error 243
 	fi
 	if [ "$KMOD" = "nvidia" ]; then
 		DEBIAN_FRONTEND="noninteractive" \
