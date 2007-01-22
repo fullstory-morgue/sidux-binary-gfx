@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.4) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.4) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * Installation of nvidia-glx and nvidia-kernel-common added
   * nvidia-kernel-common fixed. Install order was wrong. 
 
