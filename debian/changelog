@@ -1,8 +1,12 @@
 sidux-binary-gfx (1.0.4) UNRELEASED; urgency=low
 
+  [ Stefan Lippers-Hollmann ]
   * NOT RELEASED YET
 
- -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Mon, 22 Jan 2007 10:54:02 +0100
+  [ Andreas Weber ]
+  * Installation of nvidia-glx and nvidia-kernel-common added 
+
+ -- Andreas Weber <andreas@it-weber.com>  Mon, 22 Jan 2007 15:05:39 +0100
 
 sidux-binary-gfx (1.0.3) unstable; urgency=low
 
