@@ -117,14 +117,16 @@ build() {
 		DEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
 		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-kernel-common || error 242
+		apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
 	fi
 	if [ "$KMOD" = "nvidia" ]; then
 		DDEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
 		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-kernel-common || error 242
+		apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
 	fi
+	echo "* Cleaning up old deb's."
+	rm -f /usr/src/$KMOD*$KERNEL*.deb 1>> $LOG 2>> $LOG
 	DEBIAN_FRONTEND="noninteractive" \
 	DEBIAN_PRIORITY="critical" \
 	DEBCONF_NOWARNINGS="yes" \
@@ -159,13 +161,13 @@ install_deb()
 		DEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
 		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-glx-legacy || error 243
+		apt-get -fy install nvidia-glx-legacy 1>> $LOG 2>> $LOG || error 243
 	fi
 	if [ "$KMOD" = "nvidia" ]; then
 		DEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
 		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-glx || error 243
+		apt-get -fy install nvidia-glx 1>> $LOG 2>> $LOG || error 243
 	fi
 }
 
@@ -211,26 +213,26 @@ sources_backup() {
 deb http://ftp.debian.org/debian/ sid main contrib non-free
 deb http://sidux.net/debian/ sid main fix.main contrib non-free
 EOF
-	apt-get update || error 245
+	apt-get update 1>> $LOG 2>> $LOG || error 245
 }
 
 sources_restore() {
-	cp /etc/apt/sources.backup /etc/apt/sources.list
+	cp /etc/apt/sources.backup /etc/apt/sources.list 1>> $LOG 2>> $LOG
 }
 
 clean_up() {
-	apt-get update || error 245
+	apt-get update 1>> $LOG 2>> $LOG || error 245
 }
 
 install_me() {
-	apt-get install sidux-binary-gfx
+	apt-get install sidux-binary-gfx 1>> $LOG 2>> $LOG
 	/usr/sbin/install-binary-gfx
 	exit 0
 }
 
 nuke_me() {
 	[ -f /etc/apt/sources.backup ] && cp /etc/apt/sources.backup /etc/apt/sources.list
-	rm -f /etc/apt/sources.backup
+	rm -f /etc/apt/sources.backup 1>> $LOG 2>> $LOG
 }
 
 # We have to be root. Oherwise we exit with exitcode 1
@@ -307,7 +309,7 @@ done
 lspci | grep nVidia > /dev/null && KMOD="nvidia"  
 lspci | grep ATI > /dev/null && KMOD="fglrx"
 sources_backup
-dpkg -l | grep sidux-binary-gfx || install_me 
+dpkg -l | grep sidux-binary-gfx 1>> $LOG 2>> $LOG || install_me 
 
 # If we still don't know the GFX Board we will exit with exitcode 254.
 # User can still build the Modules by using -b <Name of the Module>.
