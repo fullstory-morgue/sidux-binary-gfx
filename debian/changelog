@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.5) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.5) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * Support added for su-me (code grabbed from fix-unionfs)
   * Unionfs fix added (code grabbed from fix-unionfs)
   * Test of required free Diskspace added
