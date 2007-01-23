@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.6) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.6) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ webera ]
   * commented out Disktest for now.  
 
  -- webera <webera@anddesktop1>  Tue, 23 Jan 2007 22:47:59 +0100
