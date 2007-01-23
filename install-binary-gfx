@@ -114,17 +114,24 @@ build() {
 	echo "* Building $KMOD Module."
 	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
 		ln -s /usr/src/linux/include/linux/autoconf.h /usr/src/linux/include/linux/config.h 1>> $LOG 2>> $LOG
-		DEBIAN_FRONTEND="noninteractive" \
-		DEBIAN_PRIORITY="critical" \
-		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
 	fi
-	if [ "$KMOD" = "nvidia" ]; then
-		DDEBIAN_FRONTEND="noninteractive" \
-		DEBIAN_PRIORITY="critical" \
-		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
+	
+	if [ "$BUILDONLY" = "FALSE" ]; then
+		if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
+			ln -s /usr/src/linux/include/linux/autoconf.h /usr/src/linux/include/linux/config.h 1>> $LOG 2>> $LOG
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
+		fi
+		if [ "$KMOD" = "nvidia" ]; then
+			DDEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
+		fi
 	fi
+	
 	echo "* Cleaning up old deb's."
 	rm -f /usr/src/$KMOD*$KERNEL*.deb 1>> $LOG 2>> $LOG
 	DEBIAN_FRONTEND="noninteractive" \
@@ -268,7 +275,14 @@ KERNEL=$(uname -r)
 SLH_KERNEL="FALSE"
 DATE=$(date +%D\ %T)
 ME=$(basename $0)
+BUILDONLY="FALSE"
 DATABASE="/usr/share/sidux-binary-gfx/detect_nvcard"
+MEMFREE=$(grep MemFree /proc/meminfo | awk '{print $2}')
+DISKFREE=$(df -k /usr/src | grep \/SIDUX | awk '{print $2}')
+if [ "$DISKFREE" -lt "50000" ]; then
+	echo "There is not enough Diskspace available to install/build a Kernel Module."
+	exit 1
+fi
 # Do we have one of the wonderful SLH Kernel's 
 uname -r | grep "\-slh\-" > /dev/null && SLH_KERNEL="TRUE"
 uname -r | grep "\-slh64\-"  > /dev/null && SLH_KERNEL="TRUE"
@@ -288,6 +302,7 @@ do
    b) echo "Building $OPTARG"
       KMOD=$OPTARG
       MODTEST="FALSE"
+      BUILDONLY="TRUE"
       [ $KMOD = "nvidia" ] && MODTEST="TRUE"
       [ $KMOD = "fglrx" ] && MODTEST="TRUE"
       [ $KMOD = "nvidia-legacy" ] && MODTEST="TRUE" && KMOD="nvidia-kernel-legacy"
