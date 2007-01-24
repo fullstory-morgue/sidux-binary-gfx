@@ -242,11 +242,26 @@ nuke_me() {
 	rm -f /etc/apt/sources.backup 1>> /dev/null 2>> /dev/null 
 }
 
+detect_card() {
+	# Try to identify which kind of GFX Board we have
+	lspci | grep nVidia > /dev/null && KMOD="nvidia"
+	lspci | grep ATI > /dev/null && KMOD="fglrx"
+}
+
 # We have to be root. Oherwise we exit with exitcode 1
 if [ "$(id -u)" -ne 0 ]; then
 	[ -x /usr/bin/su-me ] && DISPLAY="" exec su-me "$0" "$@"
 
 	echo Error: You must be root to run this script!
+	exit 1
+fi
+
+if [ -r /usr/bin/ssft.sh ]; then
+	. /usr/bin/ssft.sh
+	ssft_choose_frontend > /dev/null
+else
+	echo "/usr/bin/ssft.sh not found."
+	echo "Please make sure ssft and zenity are installed."
 	exit 1
 fi
 
@@ -269,6 +284,7 @@ echo "Script to install binary Drivers for NVIDIA/ATI Grafik Cards"
 echo ""
 
 # Initializing basic Variables
+DEBUG=0
 KMOD="none"
 ARCH=$(uname -m)
 KERNEL=$(uname -r)
@@ -277,12 +293,14 @@ DATE=$(date +%D\ %T)
 ME=$(basename $0)
 BUILDONLY="FALSE"
 DATABASE="/usr/share/sidux-binary-gfx/detect_nvcard"
-#MEMFREE=$(grep MemFree /proc/meminfo | awk '{print $2}')
-#DISKFREE=$(df -k /usr/src | grep \/SIDUX | awk '{print $2}')
-#if [ "$DISKFREE" -lt "50000" ]; then
-#	echo "There is not enough Diskspace available to install/build a Kernel Module."
-#	exit 1
-#fi
+MEMFREE=$(grep MemFree /proc/meminfo | awk '{print $2}')
+DISKFILTER=$(df -k /usr/src | awk '{print $6}' | grep \/)
+DISKFREE=$(df -k /usr/src | grep $DISKFILTER | awk '{print $2}')
+if [ "$DISKFREE" -lt "50000" ]; then
+	echo "There is not enough Diskspace available to install/build a Kernel Module."
+	exit 1
+fi
+
 # Do we have one of the wonderful SLH Kernel's 
 uname -r | grep "\-slh\-" > /dev/null && SLH_KERNEL="TRUE"
 uname -r | grep "\-slh64\-"  > /dev/null && SLH_KERNEL="TRUE"
@@ -293,11 +311,22 @@ trap nuke_me exit
 # we can append the -b Parameter
 VERBOSE=0
 UPDATE=0
-while getopts vb:uh opt # "u" is removed to make sure the manual update isn't working
+while getopts vb:iduh opt # "u" is removed to make sure the manual update isn't working
 do
  case $opt in
    # We can run the Script in verbose Mode to see more output and the logfile after the execution.	
-   v) VERBOSE=1
+   v) DEBUG=1 
+      [ "$DEBUG" = 1 ] && echo "+++ DIALOG: $_l_frontend."
+      [ "$DEBUG" = 1 ] && echo "+++ FLL_IMAGE_DIR: $FLL_IMAGE_DIR."
+      [ "$DEBUG" = 1 ] && echo "+++ FLL_DISTRO_MODE: $FLL_DISTRO_MODE."
+      [ "$DEBUG" = 1 ] && echo "+++ ARCH: $ARCH."
+      [ "$DEBUG" = 1 ] && echo "+++ KERNEL: $KERNEL."
+      [ "$DEBUG" = 1 ] && echo "+++ SLH_KERNEL: $SLH_KERNEL."
+      [ "$DEBUG" = 1 ] && echo "+++ DATE: $DATE."
+      [ "$DEBUG" = 1 ] && echo "+++ ME: $ME."
+      [ "$DEBUG" = 1 ] && echo "+++ DATABASE: $DATABASE."
+      [ "$DEBUG" = 1 ] && echo "+++ MEMFREE: $MEMFREE."
+      [ "$DEBUG" = 1 ] && echo "+++ DISKFREE: $DISKFREE."
    	;;
    b) echo "Building $OPTARG"
       KMOD=$OPTARG
@@ -315,6 +344,23 @@ do
       clean_up
       exit 0
       	;;
+   d) echo "Detecting NVIDIA Cards"
+      detect_card
+      [ "$DEBUG" = 1 ] && echo "+++ KMOD: $KMOD."
+      if [ "$KMOD" = "fglrx" ]; then
+      	echo "ATI Card found."
+      else
+      	if [ -r /usr/share/sidux-binary-gfx/detect_nvcard ]; then
+		[ "$DEBUG" = 1 ] && echo "+++ DATABASE found"
+      		. /usr/share/sidux-binary-gfx/detect_nvcard
+      	else
+      		echo "/usr/share/sidux-binary-gfx/detect_nvcard not found."
+		echo "Please check Installation of sidux-binary-gfx."
+		exit 1
+      	fi
+      fi
+      exit 0
+	;;
    u) echo "Updating Script"
       create_log
       sources_backup
@@ -329,6 +375,7 @@ do
    \?|h) echo "Usage $0 [options] " >&2
        	echo " -v	Verbose" >&2
 	echo " -b MOD	Build only" >&2
+	echo " -d 	Detect Card only" >&2
 	echo ""
 	echo "Valid MOD's are nvidia, nvidia-legacy and fglrx."
        	exit 0
@@ -336,9 +383,7 @@ do
   esac
 done
 
-# Try to identify which kind of GFX Board we have
-lspci | grep nVidia > /dev/null && KMOD="nvidia"  
-lspci | grep ATI > /dev/null && KMOD="fglrx"
+detect_card
 sources_backup
 dpkg -l | grep sidux-binary-gfx 1>> /dev/null 2>> /dev/null || install_me 
 
@@ -361,6 +406,7 @@ if [ $KMOD = "nvidia" ]; then
 		nv) NVSRC="none";;
 		*) NVSRC="none";;
 	esac
+	[ "$DEBUG" = 1 ] && echo "+++ NVSRC: $NVSRC."
 fi
 
 # We call all the function's to install the Driver automatically
@@ -373,7 +419,7 @@ sources_restore
 clean_up
 
 # If we are using -v we will Print out the Log now.
-if [ $VERBOSE = "1" ]; then
+if [ $DEBUG = "1" ]; then
 	cat $LOG
 fi
 
