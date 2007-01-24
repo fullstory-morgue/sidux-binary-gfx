@@ -11,6 +11,7 @@
 #	08.01.2007 apt-get update added to make sure we can install the required sources
 #	21.01.2007 m-a update added
 #	22.01.2007 nvidia-glx and nvidia-common added as m-a isn't installing that Packages automatically 
+#	24.01.2007 nvidia-xconfig added to change the xorg automatically
 #
 
 error() 
@@ -31,6 +32,7 @@ error()
 		244) ERR_D="m-a update failed.";;
 		243) ERR_D="nvidia-glx install failed.";;
 		242) ERR_D="nvidia-kernel-common install failed.";;
+		241) ERR_D="nvidia-xconfig install failed.";;
 		*) ERR_D="Unexpected Error !";;
 	esac
 	echo "! ERROR: ($ERR_C) $ERR_D"
@@ -196,6 +198,12 @@ write_xorg()
 		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver\t"nvidia"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"nvidia"/g'	$XORGCFG 
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
+		DEBIAN_FRONTEND="noninteractive" \
+		DEBIAN_PRIORITY="critical" \
+		DEBCONF_NOWARNINGS="yes" \
+		apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
+		echo "* Running nvidia-xconfig to configure your xorg."
+		nvidia-xconfig -o /etc/X11/xorg.conf -s
 	fi
 	
 	# Changing entry's for nvidia-legacy using Perl oneliners.
@@ -203,6 +211,12 @@ write_xorg()
 		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver\t"nvidia"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"nvidia"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
+		DEBIAN_FRONTEND="noninteractive" \
+                DEBIAN_PRIORITY="critical" \
+                DEBCONF_NOWARNINGS="yes" \
+                apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
+		echo "* Running nvidia-xconfig to configure your xorg."
+                nvidia-xconfig -o /etc/X11/xorg.conf -s
 	fi
 
 	# Changing entry's for fglrx using Perl oneliners.
@@ -210,6 +224,7 @@ write_xorg()
 		perl -pi -e 's/^[\s]*Driver\s*"radeon"/\tDriver\t"fglrx"/g'	$XORGCFG 
 		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"fglrx"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"fglrx"/g'	$XORGCFG
+		#aticonfig --initial
 	fi
 }
 
@@ -248,6 +263,13 @@ detect_card() {
 	lspci | grep ATI > /dev/null && KMOD="fglrx"
 }
 
+check_live() {
+	# This will check if we are in livemode and run restartx automatically
+	if [ "$FLL_DISTRO_MODE" = "live" ]; then
+		restartx 
+	fi
+}
+
 # We have to be root. Oherwise we exit with exitcode 1
 if [ "$(id -u)" -ne 0 ]; then
 	[ -x /usr/bin/su-me ] && DISPLAY="" exec su-me "$0" "$@"
@@ -279,7 +301,6 @@ if [ "$FLL_DISTRO_MODE" = "live" ]; then
 	fi
 fi
 
-echo "Running $ME"
 echo "Script to install binary Drivers for NVIDIA/ATI Grafik Cards"
 echo ""
 
@@ -417,6 +438,7 @@ install_deb
 write_xorg
 sources_restore
 clean_up
+check_live
 
 # If we are using -v we will Print out the Log now.
 if [ $DEBUG = "1" ]; then
