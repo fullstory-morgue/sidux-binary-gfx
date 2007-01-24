@@ -120,13 +120,16 @@ build() {
 	
 	if [ "$BUILDONLY" = "FALSE" ]; then
 		if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
+			# The legacy Driver needs a hack on the Source / Headers
 			ln -s /usr/src/linux/include/linux/autoconf.h /usr/src/linux/include/linux/config.h 1>> $LOG 2>> $LOG
+			# We have to make sure nvidia-kernel-common is installed
 			DEBIAN_FRONTEND="noninteractive" \
 			DEBIAN_PRIORITY="critical" \
 			DEBCONF_NOWARNINGS="yes" \
 			apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
 		fi
 		if [ "$KMOD" = "nvidia" ]; then
+			# We have to make sure nvidia-kernel-common is installed
 			DDEBIAN_FRONTEND="noninteractive" \
 			DEBIAN_PRIORITY="critical" \
 			DEBCONF_NOWARNINGS="yes" \
@@ -135,7 +138,9 @@ build() {
 	fi
 	
 	echo "* Cleaning up old deb's."
+	# We are cleaning /usr/src from old nvidia debs. Otherwise the ls command for $DEB will create a List
 	rm -f /usr/src/$KMOD*$KERNEL*.deb 1>> $LOG 2>> $LOG
+	# Building the Module
 	DEBIAN_FRONTEND="noninteractive" \
 	DEBIAN_PRIORITY="critical" \
 	DEBCONF_NOWARNINGS="yes" \
@@ -167,12 +172,14 @@ install_deb()
 		apt-get -fy install 1>> $LOG 2>> $LOG || error 248
 	fi	
 	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
+		# We have to install nvidia-glx to get the Driver working
 		DEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
 		DEBCONF_NOWARNINGS="yes" \
 		apt-get -fy install nvidia-glx-legacy 1>> $LOG 2>> $LOG || error 243
 	fi
 	if [ "$KMOD" = "nvidia" ]; then
+		# We have to install nvidia-glx to get the Driver working
 		DEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
 		DEBCONF_NOWARNINGS="yes" \
@@ -195,12 +202,14 @@ write_xorg()
 	
 	# Changing entry's for nvidia using Perl oneliners.
 	if [ $KMOD = "nvidia" ]; then
+		# The Perl oneliners are just a Fallback in case nvidia-xconfig will fail to install
 		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver\t"nvidia"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"nvidia"/g'	$XORGCFG 
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
 		DEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
 		DEBCONF_NOWARNINGS="yes" \
+		# For NVIDIA Cards we use nvidia-xconfig to change the xorg.conf
 		apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
 		echo "* Running nvidia-xconfig to configure your xorg."
 		nvidia-xconfig -o /etc/X11/xorg.conf -s
@@ -208,9 +217,11 @@ write_xorg()
 	
 	# Changing entry's for nvidia-legacy using Perl oneliners.
 	if [ $KMOD = "nvidia-kernel-legacy" ]; then
+		# The Perl oneliners are just a Fallback in case nvidia-xconfig will fail to install
 		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver\t"nvidia"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"nvidia"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
+		# For NVIDIA Cards we use nvidia-xconfig to change the xorg.conf
 		DEBIAN_FRONTEND="noninteractive" \
                 DEBIAN_PRIORITY="critical" \
                 DEBCONF_NOWARNINGS="yes" \
@@ -221,6 +232,7 @@ write_xorg()
 
 	# Changing entry's for fglrx using Perl oneliners.
 	if [ $KMOD == "fglrx" ]; then
+		# The Perl oneliners are just a Fallback in case aticonfig will fail
 		perl -pi -e 's/^[\s]*Driver\s*"radeon"/\tDriver\t"fglrx"/g'	$XORGCFG 
 		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"fglrx"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"fglrx"/g'	$XORGCFG
@@ -229,30 +241,35 @@ write_xorg()
 }
 
 sources_backup() {
+	# Backup sources.list and create the temporary config with contrib and non-free repos
 	cp /etc/apt/sources.list /etc/apt/sources.backup
 	cat > "/etc/apt/sources.list" \
 	<<EOF
 deb http://ftp.debian.org/debian/ sid main contrib non-free
-deb http://sidux.net/debian/ sid main fix.main contrib non-free
+deb http://sidux.com/debian/ sid main fix.main contrib non-free
 EOF
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
 sources_restore() {
+	# Restoring original sources.list
 	cp /etc/apt/sources.backup /etc/apt/sources.list 1>> $LOG 2>> $LOG
 }
 
 clean_up() {
+	# Run apt-get update to avoid apt error messages
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
 install_me() {
-	apt-get install sidux-binary-gfx 1>> /dev/null 2>> /dev/null 
-	/usr/sbin/install-binary-gfx
+	# If someone tries to run this Script without installing the Package, we try to install it
+	apt-get install sidux-binary-gfx 1>> /dev/null 2>> /dev/null || exit 1
+	/usr/sbin/install-binary-gfx || exit 1
 	exit 0
 }
 
 nuke_me() {
+	# If someone is pressing STRG+C we restore backed up sources.list before we left
 	[ -f /etc/apt/sources.backup ] && cp /etc/apt/sources.backup /etc/apt/sources.list
 	rm -f /etc/apt/sources.backup 1>> /dev/null 2>> /dev/null 
 }
@@ -266,7 +283,7 @@ detect_card() {
 check_live() {
 	# This will check if we are in livemode and run restartx automatically
 	if [ "$FLL_DISTRO_MODE" = "live" ]; then
-		restartx 
+		restartx &
 	fi
 }
 
@@ -278,6 +295,7 @@ if [ "$(id -u)" -ne 0 ]; then
 	exit 1
 fi
 
+# Check fo ssft and choose a frontend. This will be needed later.
 if [ -r /usr/bin/ssft.sh ]; then
 	. /usr/bin/ssft.sh
 	ssft_choose_frontend > /dev/null
@@ -287,6 +305,7 @@ else
 	exit 1
 fi
 
+# Check if we are on a HD Install or livemode
 FLL_IMAGE_DIR="SIDUX"
 FLL_DISTRO_MODE="installed"
 [ -r /etc/default/distro ] && . /etc/default/distro
@@ -317,6 +336,8 @@ DATABASE="/usr/share/sidux-binary-gfx/detect_nvcard"
 MEMFREE=$(grep MemFree /proc/meminfo | awk '{print $2}')
 DISKFILTER=$(df -k /usr/src | awk '{print $6}' | grep \/)
 DISKFREE=$(df -k /usr/src | grep $DISKFILTER | awk '{print $2}')
+
+# We need 50MB free to build and install the Module
 if [ "$DISKFREE" -lt "50000" ]; then
 	echo "There is not enough Diskspace available to install/build a Kernel Module."
 	exit 1
@@ -366,6 +387,7 @@ do
       exit 0
       	;;
    d) echo "Detecting NVIDIA Cards"
+      # That option will show User the Card which will be detected by this Script
       detect_card
       [ "$DEBUG" = 1 ] && echo "+++ KMOD: $KMOD."
       if [ "$KMOD" = "fglrx" ]; then
@@ -383,6 +405,7 @@ do
       exit 0
 	;;
    u) echo "Updating Script"
+      # This will update the Script
       create_log
       sources_backup
       DEBIAN_FRONTEND="noninteractive" \
@@ -390,6 +413,7 @@ do
       DEBCONF_NOWARNINGS="yes" \
       apt-get -y upgrade sidux-scripts sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
       sources_restore
+      clean_up
       exit 0
    	;;
    # Of course we have a help Option.	
