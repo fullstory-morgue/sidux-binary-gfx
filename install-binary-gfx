@@ -367,7 +367,7 @@ do
       DEBIAN_FRONTEND="noninteractive" \
       DEBIAN_PRIORITY="critical" \
       DEBCONF_NOWARNINGS="yes" \
-      apt-get -y upgrade sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
+      apt-get -y upgrade sidux-scripts sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
       sources_restore
       exit 0
    	;;
