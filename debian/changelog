@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.7) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.7) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * Debug mode and disktest fixed
 
  -- Andreas Weber <andreas@it-weber.com>  Wed, 24 Jan 2007 09:36:13 +0100
