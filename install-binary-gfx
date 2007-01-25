@@ -300,9 +300,9 @@ if [ -r /usr/bin/ssft.sh ]; then
 	. /usr/bin/ssft.sh
 	ssft_choose_frontend > /dev/null
 else
-	echo "/usr/bin/ssft.sh not found."
-	echo "Please make sure ssft and zenity are installed."
-	exit 1
+	echo "/usr/bin/ssft.sh not found. Not a big Problem yet."
+	#echo "Please make sure ssft and zenity are installed."
+	#exit 1
 fi
 
 # Check if we are on a HD Install or livemode
