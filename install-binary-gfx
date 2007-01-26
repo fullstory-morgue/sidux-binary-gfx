@@ -258,7 +258,7 @@ install_deb()
 			DEBIAN_FRONTEND="noninteractive" \
 			DEBIAN_PRIORITY="critical" \
 			DEBCONF_NOWARNINGS="yes" \
-			apt-get -y install nvidia-glx || error 243
+			apt-get -y install nvidia-glx 1>> $LOG 2>> $LOG || error 243
 		else
 			DEBIAN_FRONTEND="noninteractive" \
 			DEBIAN_PRIORITY="critical" \
@@ -370,6 +370,7 @@ sources_restore() {
 
 clean_up() {
 	# Run apt-get update to avoid apt error messages
+	echo "* ${BLUE}Cleaning up. Please wait.${NORMAL}"
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
@@ -448,11 +449,6 @@ main() {
 	sources_restore
 	clean_up
 	check_live
-	
-	# If we are using -v we will Print out the Log now.
-	if [ $DEBUG = "1" ]; then
-		cat $LOG
-	fi
 	
 	# We are done :)
 	echo ""
@@ -556,10 +552,6 @@ while getopts ab:ediuvh opt
 do
  case $opt in
    # We can run the Script in verbose Mode to see more output and the logfile after the execution.	
-	a) # Building automatically
-		main
-		exit 0
-	;;
 	v) DEBUG=1 
 	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DIALOG: $_l_frontend.${NORMAL}"
 	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ FLL_IMAGE_DIR: $FLL_IMAGE_DIR.${NORMAL}"
@@ -572,7 +564,12 @@ do
 	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DATABASE: $DATABASE.${NORMAL}"
 	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ MEMFREE: $MEMFREE.${NORMAL}"
 	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DISKFREE: $DISKFREE.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ EXPERIMENTAL: $EXPERIMENTAL.${NORMAL}"
 		;;
+	a) # Building automatically
+		main
+		exit 0
+	;;
 	b) echo "${BLUE}Building $OPTARG${NORMAL}"
 	KMOD=$OPTARG
 	MODTEST="FALSE"
