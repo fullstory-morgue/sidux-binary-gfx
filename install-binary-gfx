@@ -35,7 +35,7 @@ error()
 		241) ERR_D="nvidia-xconfig install failed.";;
 		*) ERR_D="Unexpected Error !";;
 	esac
-	echo "! ERROR: ($ERR_C) $ERR_D"
+	echo "${RED}! ERROR: ($ERR_C) $ERR_D${NORMAL}"
 	if [ ! -z $LOG ]; then # If we get an error before Log is created we just give it out to stdout.
 		echo "$DATE ERROR: ($ERR_C) $ERR_D" >> $LOG
 	fi
@@ -73,8 +73,8 @@ prep()
 	if [ $SLH_KERNEL = "TRUE" ]; then
 		# If Headers are already installed we are fine to run m-a prepare
 		if [ -d /usr/src/linux-headers-$KERNEL ]; then
-			echo "* Kernel Headers found."
-			echo "* Running module-assistant prepare."
+			echo "* ${BLUE}Kernel Headers found.${NORMAL}"
+			echo "* ${BLUE}Running module-assistant prepare.${NORMAL}"
 			m-a update 1>> $LOG 2>> $LOG || error 244
 			DEBIAN_FRONTEND="noninteractive" \
 			DEBIAN_PRIORITY="critical" \
@@ -113,7 +113,7 @@ prep()
 build() {
 	# We will create the Package now by using m-a. If the build fails we get the 
 	# Exitcode 250. 
-	echo "* Building $KMOD Module."
+	echo "* ${BLUE}Building ${MAGENTA}$KMOD ${BLUE}Module.${NORMAL}"
 	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
 		ln -s /usr/src/linux/include/linux/autoconf.h /usr/src/linux/include/linux/config.h 1>> $LOG 2>> $LOG
 	fi
@@ -137,7 +137,7 @@ build() {
 		fi
 	fi
 	
-	echo "* Cleaning up old deb's."
+	echo "* ${BLUE}Cleaning up old deb's.${NORMAL}"
 	# We are cleaning /usr/src from old nvidia debs. Otherwise the ls command for $DEB will create a List
 	rm -f /usr/src/$KMOD*$KERNEL*.deb 1>> $LOG 2>> $LOG
 	# Building the Module
@@ -145,7 +145,7 @@ build() {
 	DEBIAN_PRIORITY="critical" \
 	DEBCONF_NOWARNINGS="yes" \
 	m-a a-b -i $KMOD 1>> $LOG 2>> $LOG || error 250
-	echo "* $KMOD build successfull."
+	echo "* ${MAGENTA}$KMOD ${GREEN}build successfull.${NORMAL}"
 }
 
 install_deb() 
@@ -160,7 +160,7 @@ install_deb()
 	fi
 	# Go back to the Path we were comming.
 	cd $OLDPATH
-	echo "* Installing $DEB"
+	echo "* ${BLUE}Installing $DEB${NORMAL}"
 	# Install the deb.
 	dpkg -i /usr/src/$DEB 1>> $LOG 2>> $LOG
 	if [ ! "$?" = "0" ]; then
@@ -198,7 +198,7 @@ write_xorg()
 	XORGBKP="/etc/X11/xorg.$EXTENSION"
 	# Creating the Backup
 	cp $XORGCFG $XORGBKP
-	echo "* Original $XORGCFG saved as $XORGBKP."
+	echo "* ${BLUE}Original $XORGCFG saved as $XORGBKP.${NORMAL}"
 	
 	# Changing entry's for nvidia using Perl oneliners.
 	if [ $KMOD = "nvidia" ]; then
@@ -211,7 +211,7 @@ write_xorg()
 		DEBCONF_NOWARNINGS="yes" \
 		# For NVIDIA Cards we use nvidia-xconfig to change the xorg.conf
 		apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
-		echo "* Running nvidia-xconfig to configure your xorg."
+		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
 		nvidia-xconfig -o /etc/X11/xorg.conf -s
 	fi
 	
@@ -226,7 +226,7 @@ write_xorg()
                 DEBIAN_PRIORITY="critical" \
                 DEBCONF_NOWARNINGS="yes" \
                 apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
-		echo "* Running nvidia-xconfig to configure your xorg."
+		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
                 nvidia-xconfig -o /etc/X11/xorg.conf -s
 	fi
 
@@ -243,11 +243,20 @@ write_xorg()
 sources_backup() {
 	# Backup sources.list and create the temporary config with contrib and non-free repos
 	cp /etc/apt/sources.list /etc/apt/sources.backup
+	if [ "EXPERIMENTAL" = 1 ]; then
+	cat > "/etc/apt/sources.list" \
+	<<EOF
+deb http://ftp.debian.org/debian/ sid main contrib non-free
+deb http://ftp.debian.org/debian experimental main contrib non-free
+deb http://sidux.com/debian/ sid main fix.main contrib non-free
+EOF	
+	else
 	cat > "/etc/apt/sources.list" \
 	<<EOF
 deb http://ftp.debian.org/debian/ sid main contrib non-free
 deb http://sidux.com/debian/ sid main fix.main contrib non-free
 EOF
+	fi
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
@@ -287,23 +296,71 @@ check_live() {
 	fi
 }
 
+main() {
+	detect_card
+	sources_backup
+	dpkg -l | grep sidux-binary-gfx 1>> /dev/null 2>> /dev/null || install_me 
+	
+	# If we still don't know the GFX Board we will exit with exitcode 254.
+	# User can still build the Modules by using -b <Name of the Module>.
+	if [ $KMOD = "none" ]; then
+		error 254
+	fi
+	
+	if [ $KMOD = "nvidia" ]; then
+		if [ -f $DATABASE ]; then
+			. $DATABASE
+			echo ""
+		else
+			error 246
+		fi
+	
+		case $DRIVER in
+			legacy) NVSRC="nvidia-kernel-legacy-source"; KMOD="nvidia-kernel-legacy";;
+			nvidia) NVSRC="nvidia-kernel-source";;
+			nv) NVSRC="none";;
+			*) NVSRC="none";;
+		esac
+		[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ NVSRC: $NVSRC.${NORMAL}"
+	fi
+	
+	# We call all the function's to install the Driver automatically
+	create_log
+	prep
+	build
+	install_deb
+	write_xorg
+	sources_restore
+	clean_up
+	check_live
+	
+	# If we are using -v we will Print out the Log now.
+	if [ $DEBUG = "1" ]; then
+		cat $LOG
+	fi
+	
+	# We are done :)
+	echo ""
+	echo "${GREEN}Script finished.${NORMAL}"
+}
+
 # We have to be root. Oherwise we exit with exitcode 1
 if [ "$(id -u)" -ne 0 ]; then
 	[ -x /usr/bin/su-me ] && DISPLAY="" exec su-me "$0" "$@"
 
-	echo Error: You must be root to run this script!
+	echo "${RED}Error: You must be root to run this script!${NORMAL}"
 	exit 1
 fi
 
 # Check fo ssft and choose a frontend. This will be needed later.
-if [ -r /usr/bin/ssft.sh ]; then
-	. /usr/bin/ssft.sh
-	ssft_choose_frontend > /dev/null
-else
-	echo "/usr/bin/ssft.sh not found. Not a big Problem yet."
-	#echo "Please make sure ssft and zenity are installed."
-	#exit 1
-fi
+#if [ -r /usr/bin/ssft.sh ]; then
+#	. /usr/bin/ssft.sh
+#	ssft_choose_frontend > /dev/null
+#else
+#	echo "/usr/bin/ssft.sh not found. Not a big Problem yet."
+#	echo "Please make sure ssft and zenity are installed."
+#	exit 1
+#fi
 
 # Check if we are on a HD Install or livemode
 FLL_IMAGE_DIR="SIDUX"
@@ -312,16 +369,13 @@ FLL_DISTRO_MODE="installed"
 
 if [ "$FLL_DISTRO_MODE" = "live" ]; then
 	if grep -q unionfs /proc/mounts; then
-		echo Unionfs found.
+		echo "${BLUE}Unionfs found${NORMAL}."
 	else
-		echo Activating Unionfs now.
+		echo "${BLUE}Activating Unionfs now.${NORMAL}"
 		mkdir -p /tmp/union
 		mount -t unionfs -o dirs="/tmp/union/:/$FLL_IMAGE_DIR" /none "/$FLL_IMAGE_DIR/" 2>&1 >/dev/null
 	fi
 fi
-
-echo "Script to install binary Drivers for NVIDIA/ATI Grafik Cards"
-echo ""
 
 # Initializing basic Variables
 DEBUG=0
@@ -336,10 +390,39 @@ DATABASE="/usr/share/sidux-binary-gfx/detect_nvcard"
 MEMFREE=$(grep MemFree /proc/meminfo | awk '{print $2}')
 DISKFILTER=$(df -k /usr/src | awk '{print $6}' | grep \/)
 DISKFREE=$(df -k /usr/src | grep $DISKFILTER | awk '{print $2}')
+EXPERIMENTAL=0
+
+# Reset fb color mode
+RESET="]R"
+# ANSI COLORS
+# Erase to end of line
+CRE="
+[K"
+# Clear and reset Screen
+CLEAR="c"
+# Normal color
+NORMAL="[0;39m"
+# RED: Failure or error message
+RED="[1;31m"
+# GREEN: Success message
+GREEN="[1;32m"
+# YELLOW: Descriptions
+YELLOW="[1;33m"
+# BLUE: System mesages
+BLUE="[1;34m"
+# MAGENTA: Found devices or drivers
+MAGENTA="[1;35m"
+# CYAN: Questions
+CYAN="[1;36m"
+# BOLD WHITE: Hint
+WHITE="[1;37m"
+
+echo "${BLUE}Script to install binary Drivers for NVIDIA/ATI Grafik Cards${NORMAL}"
+echo ""
 
 # We need 50MB free to build and install the Module
 if [ "$DISKFREE" -lt "50000" ]; then
-	echo "There is not enough Diskspace available to install/build a Kernel Module."
+	echo "${RED}There is not enough Diskspace available to install/build a Kernel Module.${NORMAL}"
 	exit 1
 fi
 
@@ -353,124 +436,98 @@ trap nuke_me exit
 # we can append the -b Parameter
 VERBOSE=0
 UPDATE=0
-while getopts vb:iduh opt # "u" is removed to make sure the manual update isn't working
+while getopts ab:ediuvh opt 
 do
  case $opt in
    # We can run the Script in verbose Mode to see more output and the logfile after the execution.	
-   v) DEBUG=1 
-      [ "$DEBUG" = 1 ] && echo "+++ DIALOG: $_l_frontend."
-      [ "$DEBUG" = 1 ] && echo "+++ FLL_IMAGE_DIR: $FLL_IMAGE_DIR."
-      [ "$DEBUG" = 1 ] && echo "+++ FLL_DISTRO_MODE: $FLL_DISTRO_MODE."
-      [ "$DEBUG" = 1 ] && echo "+++ ARCH: $ARCH."
-      [ "$DEBUG" = 1 ] && echo "+++ KERNEL: $KERNEL."
-      [ "$DEBUG" = 1 ] && echo "+++ SLH_KERNEL: $SLH_KERNEL."
-      [ "$DEBUG" = 1 ] && echo "+++ DATE: $DATE."
-      [ "$DEBUG" = 1 ] && echo "+++ ME: $ME."
-      [ "$DEBUG" = 1 ] && echo "+++ DATABASE: $DATABASE."
-      [ "$DEBUG" = 1 ] && echo "+++ MEMFREE: $MEMFREE."
-      [ "$DEBUG" = 1 ] && echo "+++ DISKFREE: $DISKFREE."
-   	;;
-   b) echo "Building $OPTARG"
-      KMOD=$OPTARG
-      MODTEST="FALSE"
-      BUILDONLY="TRUE"
-      [ $KMOD = "nvidia" ] && MODTEST="TRUE"
-      [ $KMOD = "fglrx" ] && MODTEST="TRUE"
-      [ $KMOD = "nvidia-legacy" ] && MODTEST="TRUE" && KMOD="nvidia-kernel-legacy"
-      [ $MODTEST = "FALSE" ] && error 249
-      create_log
-      sources_backup
-      prep
-      build
-      sources_restore
-      clean_up
-      exit 0
-      	;;
-   d) echo "Detecting NVIDIA Cards"
-      # That option will show User the Card which will be detected by this Script
-      detect_card
-      [ "$DEBUG" = 1 ] && echo "+++ KMOD: $KMOD."
-      if [ "$KMOD" = "fglrx" ]; then
-      	echo "ATI Card found."
-      else
-      	if [ -r /usr/share/sidux-binary-gfx/detect_nvcard ]; then
-		[ "$DEBUG" = 1 ] && echo "+++ DATABASE found"
-      		. /usr/share/sidux-binary-gfx/detect_nvcard
-      	else
-      		echo "/usr/share/sidux-binary-gfx/detect_nvcard not found."
-		echo "Please check Installation of sidux-binary-gfx."
-		exit 1
-      	fi
-      fi
-      exit 0
+	a) # Building automatically
+		main
 	;;
-   u) echo "Updating Script"
-      # This will update the Script
-      create_log
-      sources_backup
-      DEBIAN_FRONTEND="noninteractive" \
-      DEBIAN_PRIORITY="critical" \
-      DEBCONF_NOWARNINGS="yes" \
-      apt-get -y upgrade sidux-scripts sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
-      sources_restore
-      clean_up
-      exit 0
-   	;;
-   # Of course we have a help Option.	
-   \?|h) echo "Usage $0 [options] " >&2
-       	echo " -v	Verbose" >&2
-	echo " -b MOD	Build only" >&2
-	echo " -d 	Detect Card only" >&2
+	v) DEBUG=1 
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DIALOG: $_l_frontend.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ FLL_IMAGE_DIR: $FLL_IMAGE_DIR.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ FLL_DISTRO_MODE: $FLL_DISTRO_MODE.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ ARCH: $ARCH.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ KERNEL: $KERNEL.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ SLH_KERNEL: $SLH_KERNEL.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DATE: $DATE.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ ME: $ME.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DATABASE: $DATABASE.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ MEMFREE: $MEMFREE.${NORMAL}"
+	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DISKFREE: $DISKFREE.${NORMAL}"
+		;;
+	b) echo "${BLUE}Building $OPTARG${NORMAL}"
+	KMOD=$OPTARG
+	MODTEST="FALSE"
+	BUILDONLY="TRUE"
+	[ $KMOD = "nvidia" ] && MODTEST="TRUE"
+	[ $KMOD = "fglrx" ] && MODTEST="TRUE"
+	[ $KMOD = "nvidia-legacy" ] && MODTEST="TRUE" && KMOD="nvidia-kernel-legacy"
+	[ $MODTEST = "FALSE" ] && error 249
+	create_log
+	sources_backup
+	prep
+	build
+	sources_restore
+	clean_up
+	exit 0
+		;;
+	d) echo "${BLUE}Detecting NVIDIA Cards${NORMAL}"
+	# That option will show User the Card which will be detected by this Script
+	detect_card
+	[ "$DEBUG" = 1 ] && echo "+++ KMOD: $KMOD."
+	if [ "$KMOD" = "fglrx" ]; then
+		echo "${BLUE}ATI Card found.${NORMAL}"
+	else
+		if [ -r /usr/share/sidux-binary-gfx/detect_nvcard ]; then
+			[ "$DEBUG" = 1 ] && echo "+++ DATABASE found"
+			. /usr/share/sidux-binary-gfx/detect_nvcard
+		else
+			echo "/usr/share/sidux-binary-gfx/detect_nvcard not found."
+			echo "Please check Installation of sidux-binary-gfx."
+			exit 1
+		fi
+	fi
+	exit 0
+		;;
+	e)
+	echo "${RED}Using Experimantal Source"
+	echo "Its not recommended to use the experimental source."
+	echo "There is no support from the sidux Team for that Function.${NORMAL}"
 	echo ""
-	echo "Valid MOD's are nvidia, nvidia-legacy and fglrx."
-       	exit 0
-   	;;
+	echo "${CYAN}Are you sure you want to use experimental? (yes/no)${NORMAL}"
+	read answer 
+	if [ ! "$answer" = "yes" ]; then
+		exit 0
+	fi
+	echo ""
+	EXPERIMENTAL=1
+	main
+		;;
+	u) echo "${BLUE}Updating Script${NORMAL}"
+	# This will update the Script
+	create_log
+	sources_backup
+	DEBIAN_FRONTEND="noninteractive" \
+	DEBIAN_PRIORITY="critical" \
+	DEBCONF_NOWARNINGS="yes" \
+	apt-get -y upgrade sidux-scripts sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
+	sources_restore
+	clean_up
+	exit 0
+		;;
+	# Of course we have a help Option.	
+	\?|h) echo "Usage $0 [options] " >&2
+		echo " -v	Verbose" >&2
+		echo " -b MOD	Build only" >&2
+		echo " -d 	Detect Card only" >&2
+		echo " -e	Use Experimental" >&2 
+		echo ""
+		echo "Valid MOD's are nvidia, nvidia-legacy and fglrx."
+		exit 0
+		;;
   esac
 done
-
-detect_card
-sources_backup
-dpkg -l | grep sidux-binary-gfx 1>> /dev/null 2>> /dev/null || install_me 
-
-# If we still don't know the GFX Board we will exit with exitcode 254.
-# User can still build the Modules by using -b <Name of the Module>.
-if [ $KMOD = "none" ]; then
-	error 254
-fi
-
-if [ $KMOD = "nvidia" ]; then
-	if [ -f $DATABASE ]; then
-        	. $DATABASE
-	else
-		error 246
-	fi
-
-	case $DRIVER in
-		legacy) NVSRC="nvidia-kernel-legacy-source"; KMOD="nvidia-kernel-legacy";;
-		nvidia) NVSRC="nvidia-kernel-source";;
-		nv) NVSRC="none";;
-		*) NVSRC="none";;
-	esac
-	[ "$DEBUG" = 1 ] && echo "+++ NVSRC: $NVSRC."
-fi
-
-# We call all the function's to install the Driver automatically
-create_log
-prep
-build
-install_deb
-write_xorg
-sources_restore
-clean_up
-check_live
-
-# If we are using -v we will Print out the Log now.
-if [ $DEBUG = "1" ]; then
-	cat $LOG
-fi
-
-# We are done :)
-echo "Script finished."
 
 #END
 
