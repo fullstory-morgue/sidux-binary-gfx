@@ -24,26 +24,30 @@ error()
 		253) ERR_D="Kernel Headers not installed !";;
 		252) ERR_D="m-a prepare failed !";;
 		251) ERR_D="failed to install linux-headers !";;
-		250) ERR_D="Build failed (check $LOG) !";;
+		250) ERR_D="Build failed !";;
 		249) ERR_D="Wrong argument. Valid modules are nvidia or fglrx. !";;
-		248) ERR_D="Package cannot be installed.";;
-		246) ERR_D="Database Script not found.";;
-		245) ERR_D="apt-get update failed.";;
-		244) ERR_D="m-a update failed.";;
-		243) ERR_D="nvidia-glx install failed.";;
-		242) ERR_D="nvidia-kernel-common install failed.";;
-		241) ERR_D="nvidia-xconfig install failed.";;
+		248) ERR_D="Package cannot be installed !";;
+		246) ERR_D="Database Script not found !";;
+		245) ERR_D="apt-get update failed !";;
+		244) ERR_D="m-a update failed !";;
+		243) ERR_D="nvidia-glx install failed !";;
+		242) ERR_D="nvidia-kernel-common install failed !";;
+		241) ERR_D="nvidia-xconfig install failed !";;
+		240) ERR_D="nvidia-kernel-source install failed !";;
+		239) ERR_D="nvidia-kernel-legacy-source install failed !";;
+		238) ERR_D="fglrx-source install failed !";;
 		*) ERR_D="Unexpected Error !";;
 	esac
 	echo "${RED}! ERROR: ($ERR_C) $ERR_D${NORMAL}"
+	echo "Check $LOG for details."
 	if [ ! -z $LOG ]; then # If we get an error before Log is created we just give it out to stdout.
 		echo "$DATE ERROR: ($ERR_C) $ERR_D" >> $LOG
 	fi
 	echo ""
+	echo "* ${BLUE}Cleaning up. Please wait.${NORMAL}"
 	# If we are in verbose Mode print out the Log File.
 	[ $VERBOSE = 1 ] && cat $LOG
 	exit $ERR_C
-
 }
 
 create_log() 
@@ -58,7 +62,51 @@ create_log()
 	echo "Detected Card: $KMOD" >> $LOG
 	echo "Installed Kernel: $KERNEL" >> $LOG
 	echo "Arch: $ARCH" >> $LOG
+	echo "Experimental: $EXPERIMENTAL" >> $LOG
 	echo "" >> $LOG
+}
+
+install_source()
+{
+	if [ "$KMOD" = "nvidia" ]; then
+		if [ "$EXPERIMENTAL" = 0 ]; then
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -y --reinstall install nvidia-kernel-source module-assistant 1>> $LOG 2>> $LOG || error 240
+		else
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -y --reinstall install nvidia-kernel-source/experimental module-assistant 1>> $LOG 2>> $LOG || apt-get install nvidia-kernel-source/experimental module-assistant 1>> $LOG 2>> $LOG || error 240
+		fi		
+	fi
+	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
+		if [ "$EXPERIMENTAL" = 0 ]; then
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -y --reinstall install nvidia-kernel-legacy-source module-assistant 1>> $LOG 2>> $LOG || error 239
+		else
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -y --reinstall install nvidia-kernel-legacy-source/experimental module-assistant 1>> $LOG 2>> $LOG || apt-get install nvidia-kernel-legacy-source module-assistant 1>> $LOG 2>> $LOG || error 239
+		fi		
+	fi
+	if [ "$KMOD" = "fglrx" ]; then
+		if [ "$EXPERIMENTAL" = 0 ]; then
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -y --reinstall install fglrx-kernel-src module-assistant 1>> $LOG 2>> $LOG || error 238
+		else
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -y --reinstall install fglrx-kernel-src/experimental module-assistant 1>> $LOG 2>> $LOG || error 238
+		fi		
+	fi
 }
 
 prep() 
@@ -70,16 +118,20 @@ prep()
 	# Test if we are running a SLH Kernel. That is important because the Kernel isn't 
 	# Part of any Apt Repository. We have to have manually Funktion here to install 
 	# the Headers.
+	apt-get -yf --purge remove nvidia* fglrx* 1>> $LOG 2>> $LOG  || apt-get -yf install 1>> $LOG 2>> $LOG
+	rm -f /usr/src/nvidia* 1>> $LOG 2>> $LOG
+	rm -rf /usr/src/modules/nvidia* 1>> $LOG 2>> $LOG
 	if [ $SLH_KERNEL = "TRUE" ]; then
 		# If Headers are already installed we are fine to run m-a prepare
 		if [ -d /usr/src/linux-headers-$KERNEL ]; then
 			echo "* ${BLUE}Kernel Headers found.${NORMAL}"
 			echo "* ${BLUE}Running module-assistant prepare.${NORMAL}"
 			m-a update 1>> $LOG 2>> $LOG || error 244
+			install_source
 			DEBIAN_FRONTEND="noninteractive" \
 			DEBIAN_PRIORITY="critical" \
 			DEBCONF_NOWARNINGS="yes" \
-			m-a prepare $KMOD 1>> $LOG 2>> $LOG  || error 252
+			m-a prepare $KMOD 1>> $LOG 2>> $LOG  || m-a prepare $KMOD  || error 252
 		else
 			# If Headers are not installed we stop with the error Message
 			# 253. User must install the Headers manually. There is a plan
@@ -102,6 +154,7 @@ prep()
 		# exit code 0 but something is still wrong.
 		[ -d /usr/src/linux-headers-$KERNEL ] || error 253
 		# Running m-a prepare
+		install_source
 		m-a update 1>> $LOG 2>> $LOG || error 244
 		DEBIAN_FRONTEND="noninteractive" \
 		DEBIAN_PRIORITY="critical" \
@@ -123,17 +176,31 @@ build() {
 			# The legacy Driver needs a hack on the Source / Headers
 			ln -s /usr/src/linux/include/linux/autoconf.h /usr/src/linux/include/linux/config.h 1>> $LOG 2>> $LOG
 			# We have to make sure nvidia-kernel-common is installed
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
-			apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
+			if [ "$EXPERIMENTAL" = 0 ]; then
+				DEBIAN_FRONTEND="noninteractive" \
+				DEBIAN_PRIORITY="critical" \
+				DEBCONF_NOWARNINGS="yes" \
+				apt-get -y install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
+			else
+				DEBIAN_FRONTEND="noninteractive" \
+				DEBIAN_PRIORITY="critical" \
+				DEBCONF_NOWARNINGS="yes" \
+				apt-get -y install nvidia-kernel-common/experimental 1>> $LOG 2>> $LOG || error 242
+			fi
 		fi
 		if [ "$KMOD" = "nvidia" ]; then
 			# We have to make sure nvidia-kernel-common is installed
-			DDEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
-			apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
+			if [ "$EXPERIMENTAL" = 0 ]; then
+				DEBIAN_FRONTEND="noninteractive" \
+				DEBIAN_PRIORITY="critical" \
+				DEBCONF_NOWARNINGS="yes" \
+				apt-get -y install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
+			else
+				DEBIAN_FRONTEND="noninteractive" \
+				DEBIAN_PRIORITY="critical" \
+				DEBCONF_NOWARNINGS="yes" \
+				apt-get -y install nvidia-kernel-common/experimental 1>> $LOG 2>> $LOG || apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
+			fi
 		fi
 	fi
 	
@@ -173,17 +240,31 @@ install_deb()
 	fi	
 	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
 		# We have to install nvidia-glx to get the Driver working
-		DEBIAN_FRONTEND="noninteractive" \
-		DEBIAN_PRIORITY="critical" \
-		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-glx-legacy 1>> $LOG 2>> $LOG || error 243
+		if [ "$EXPERIMENTAL" = 0 ]; then
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -y install nvidia-glx-legacy 1>> $LOG 2>> $LOG || error 243
+		else
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -y install nvidia-glx-legacy/experimental 1>> $LOG 2>> $LOG || error 243
+		fi
 	fi
 	if [ "$KMOD" = "nvidia" ]; then
 		# We have to install nvidia-glx to get the Driver working
-		DEBIAN_FRONTEND="noninteractive" \
-		DEBIAN_PRIORITY="critical" \
-		DEBCONF_NOWARNINGS="yes" \
-		apt-get -fy install nvidia-glx 1>> $LOG 2>> $LOG || error 243
+		if [ "$EXPERIMENTAL" = 0 ]; then
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -y install nvidia-glx || error 243
+		else
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -y install nvidia-glx/experimental 1>> $LOG 2>> $LOG || error 243
+		fi
 	fi
 }
 
@@ -206,11 +287,18 @@ write_xorg()
 		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver\t"nvidia"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"nvidia"/g'	$XORGCFG 
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
-		DEBIAN_FRONTEND="noninteractive" \
-		DEBIAN_PRIORITY="critical" \
-		DEBCONF_NOWARNINGS="yes" \
-		# For NVIDIA Cards we use nvidia-xconfig to change the xorg.conf
-		apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
+		if [ "EXPERIMENTAL" = 0 ]; then
+			# For NVIDIA Cards we use nvidia-xconfig to change the xorg.conf
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
+		else
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -fy install nvidia-xconfig/experimental nvidia-settings/experimental 1>> $LOG 2>> $LOG || apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
+		fi
 		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
 		nvidia-xconfig -o /etc/X11/xorg.conf -s
 	fi
@@ -221,11 +309,19 @@ write_xorg()
 		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver\t"nvidia"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"nvidia"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
+		if [ "EXPERIMENTAL" = 0 ]; then
 		# For NVIDIA Cards we use nvidia-xconfig to change the xorg.conf
-		DEBIAN_FRONTEND="noninteractive" \
-                DEBIAN_PRIORITY="critical" \
-                DEBCONF_NOWARNINGS="yes" \
-                apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -fy install nvidia-xconfig nvidia-settings 1>> $LOG 2>> $LOG || error 241
+		else
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -fy install nvidia-xconfig/experimental 1>> $LOG 2>> $LOG || apt-get -fy install nvidia-xconfig nvidia-settings 1>> $LOG 2>> $LOG || error 241
+			apt-get -fy install nvidia-settings/experimental 1>> $LOG 2>> $LOG || apt-get -fy install nvidia-settings 1>> $LOG 2>> $LOG || error 241
+		fi
 		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
                 nvidia-xconfig -o /etc/X11/xorg.conf -s
 	fi
@@ -236,6 +332,19 @@ write_xorg()
 		perl -pi -e 's/^[\s]*Driver\s*"radeon"/\tDriver\t"fglrx"/g'	$XORGCFG 
 		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"fglrx"/g'	$XORGCFG
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"fglrx"/g'	$XORGCFG
+		if [ "EXPERIMENTAL" = 0 ]; then
+		# For ATI Cards we use aticonfig to change the xorg.conf
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -fy install fglrx-control 1>> $LOG 2>> $LOG || error 241
+		else
+			DEBIAN_FRONTEND="noninteractive" \
+			DEBIAN_PRIORITY="critical" \
+			DEBCONF_NOWARNINGS="yes" \
+			apt-get -fy install fglrx-control/experimental 1>> $LOG 2>> $LOG || apt-get -fy install fglrx-control 1>> $LOG 2>> $LOG || error 241
+		fi
+		#echo "* ${BLUE}Running aticonfig to configure your xorg.${NORMAL}"
 		#aticonfig --initial
 	fi
 }
@@ -243,19 +352,13 @@ write_xorg()
 sources_backup() {
 	# Backup sources.list and create the temporary config with contrib and non-free repos
 	cp /etc/apt/sources.list /etc/apt/sources.backup
-	if [ "EXPERIMENTAL" = 1 ]; then
-	cat > "/etc/apt/sources.list" \
-	<<EOF
-deb http://ftp.debian.org/debian/ sid main contrib non-free
-deb http://ftp.debian.org/debian experimental main contrib non-free
-deb http://sidux.com/debian/ sid main fix.main contrib non-free
-EOF	
+	if [ "$EXPERIMENTAL" = 1 ]; then
+		echo "deb http://ftp.debian.org/debian/ sid main contrib non-free" > "/etc/apt/sources.list" 
+		echo "deb http://ftp.debian.org/debian experimental main contrib non-free" >> "/etc/apt/sources.list" 
+		echo "deb http://sidux.com/debian/ sid main fix.main contrib non-free" >> "/etc/apt/sources.list"
 	else
-	cat > "/etc/apt/sources.list" \
-	<<EOF
-deb http://ftp.debian.org/debian/ sid main contrib non-free
-deb http://sidux.com/debian/ sid main fix.main contrib non-free
-EOF
+		echo "deb http://ftp.debian.org/debian/ sid main contrib non-free" > "/etc/apt/sources.list" 
+		echo "deb http://sidux.com/debian/ sid main fix.main contrib non-free" >> "/etc/apt/sources.list"
 	fi
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
@@ -281,6 +384,7 @@ nuke_me() {
 	# If someone is pressing STRG+C we restore backed up sources.list before we left
 	[ -f /etc/apt/sources.backup ] && cp /etc/apt/sources.backup /etc/apt/sources.list
 	rm -f /etc/apt/sources.backup 1>> /dev/null 2>> /dev/null 
+	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
 detect_card() {
@@ -294,6 +398,17 @@ check_live() {
 	if [ "$FLL_DISTRO_MODE" = "live" ]; then
 		restartx &
 	fi
+}
+
+help_me() {
+	echo "Usage $0 [options] " >&2
+	echo " -a 	Automatic mode" >&2
+	echo " -b MOD	Build only" >&2
+	echo " -d 	Detect Card only" >&2
+	echo " -e	Use Experimental" >&2 
+	echo " -v	Verbose" >&2
+	echo ""
+	echo "Valid MOD's are nvidia, nvidia-legacy and fglrx."
 }
 
 main() {
@@ -342,6 +457,7 @@ main() {
 	# We are done :)
 	echo ""
 	echo "${GREEN}Script finished.${NORMAL}"
+	exit 0
 }
 
 # We have to be root. Oherwise we exit with exitcode 1
@@ -442,6 +558,7 @@ do
    # We can run the Script in verbose Mode to see more output and the logfile after the execution.	
 	a) # Building automatically
 		main
+		exit 0
 	;;
 	v) DEBUG=1 
 	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DIALOG: $_l_frontend.${NORMAL}"
@@ -490,8 +607,7 @@ do
 	fi
 	exit 0
 		;;
-	e)
-	echo "${RED}Using Experimantal Source"
+	e) echo "${RED}Using Experimantal Source"
 	echo "Its not recommended to use the experimental source."
 	echo "There is no support from the sidux Team for that Function.${NORMAL}"
 	echo ""
@@ -517,17 +633,14 @@ do
 	exit 0
 		;;
 	# Of course we have a help Option.	
-	\?|h) echo "Usage $0 [options] " >&2
-		echo " -v	Verbose" >&2
-		echo " -b MOD	Build only" >&2
-		echo " -d 	Detect Card only" >&2
-		echo " -e	Use Experimental" >&2 
-		echo ""
-		echo "Valid MOD's are nvidia, nvidia-legacy and fglrx."
+	\?|h) 
+		help_me
 		exit 0
 		;;
   esac
 done
+
+help_me
 
 #END
 
