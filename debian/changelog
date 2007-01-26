@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.9) unstable; urgency=low
+sidux-binary-gfx (1.0.10) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * update.
-
-  [ Andreas Weber ]
   * Experimental Mode prepared.
   * Automatic Mode disabled. Must be done with -a now.
   * Colors added for the Output.
