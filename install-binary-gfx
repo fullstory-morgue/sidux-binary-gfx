@@ -345,7 +345,7 @@ write_xorg()
 			apt-get -fy install fglrx-driver/experimental fglrx-control/experimental 1>> $LOG 2>> $LOG || apt-get -fy install fglrx-driver fglrx-control 1>> $LOG 2>> $LOG || error 241
 		fi
 		#echo "* ${BLUE}Running aticonfig to configure your xorg.${NORMAL}"
-		aticonfig --initial --input=/etc/X11/xorg.conf --output /etc/X11/xorg.conf
+		aticonfig --initial --input=/etc/X11/xorg.conf --output=/etc/X11/xorg.conf
 	fi
 }
 
