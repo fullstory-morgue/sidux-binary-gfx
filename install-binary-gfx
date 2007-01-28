@@ -337,12 +337,12 @@ write_xorg()
 			DEBIAN_FRONTEND="noninteractive" \
 			DEBIAN_PRIORITY="critical" \
 			DEBCONF_NOWARNINGS="yes" \
-			apt-get -fy install fglrx-control 1>> $LOG 2>> $LOG || error 241
+			apt-get -fy install fglrx-driver fglrx-control 1>> $LOG 2>> $LOG || error 241
 		else
 			DEBIAN_FRONTEND="noninteractive" \
 			DEBIAN_PRIORITY="critical" \
 			DEBCONF_NOWARNINGS="yes" \
-			apt-get -fy install fglrx-control/experimental 1>> $LOG 2>> $LOG || apt-get -fy install fglrx-control 1>> $LOG 2>> $LOG || error 241
+			apt-get -fy install fglrx-driver/experimental fglrx-control/experimental 1>> $LOG 2>> $LOG || apt-get -fy install fglrx-driver fglrx-control 1>> $LOG 2>> $LOG || error 241
 		fi
 		#echo "* ${BLUE}Running aticonfig to configure your xorg.${NORMAL}"
 		#aticonfig --initial
