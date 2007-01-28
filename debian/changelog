@@ -4,9 +4,10 @@ sidux-binary-gfx (1.0.11) UNRELEASED; urgency=low
   * NOT RELEASED YET
 
   [ Andreas Weber ]
-  * Installation of fglrx-driver fixed.  
+  * Installation of fglrx-driver fixed.
+  * Aticonfig activated. 
 
- -- Andreas Weber <andreas@it-weber.com>  Sun, 28 Jan 2007 11:57:57 +0100
+ -- Andreas Weber <andreas@it-weber.com>  Sun, 28 Jan 2007 12:03:14 +0100
 
 sidux-binary-gfx (1.0.10) unstable; urgency=low
 
