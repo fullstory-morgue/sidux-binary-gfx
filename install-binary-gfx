@@ -36,6 +36,12 @@ error()
 		240) ERR_D="nvidia-kernel-source install failed !";;
 		239) ERR_D="nvidia-kernel-legacy-source install failed !";;
 		238) ERR_D="fglrx-source install failed !";;
+		237) ERR_D="Wrong Parameter !"
+			help_me
+			exit	1;;
+		236) ERR_D="Network unreachable !";;
+		235) ERR_D="Wrong Module selected !";;
+		234) ERR_D="Beryl Installation failed !";;
 		*) ERR_D="Unexpected Error !";;
 	esac
 	echo "${RED}! ERROR: ($ERR_C) $ERR_D${NORMAL}"
@@ -70,40 +76,22 @@ install_source()
 {
 	if [ "$KMOD" = "nvidia" ]; then
 		if [ "$EXPERIMENTAL" = 0 ]; then
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y --reinstall install nvidia-kernel-source module-assistant 1>> $LOG 2>> $LOG || error 240
 		else
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y --reinstall install nvidia-kernel-source/experimental module-assistant 1>> $LOG 2>> $LOG || apt-get install nvidia-kernel-source/experimental module-assistant 1>> $LOG 2>> $LOG || error 240
 		fi		
 	fi
 	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
 		if [ "$EXPERIMENTAL" = 0 ]; then
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y --reinstall install nvidia-kernel-legacy-source module-assistant 1>> $LOG 2>> $LOG || error 239
 		else
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y --reinstall install nvidia-kernel-legacy-source/experimental module-assistant 1>> $LOG 2>> $LOG || apt-get install nvidia-kernel-legacy-source module-assistant 1>> $LOG 2>> $LOG || error 239
 		fi		
 	fi
 	if [ "$KMOD" = "fglrx" ]; then
 		if [ "$EXPERIMENTAL" = 0 ]; then
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y --reinstall install fglrx-kernel-src module-assistant 1>> $LOG 2>> $LOG || error 238
 		else
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y --reinstall install fglrx-kernel-src/experimental module-assistant 1>> $LOG 2>> $LOG || error 238
 		fi		
 	fi
@@ -128,9 +116,6 @@ prep()
 			echo "* ${BLUE}Running module-assistant prepare.${NORMAL}"
 			m-a update 1>> $LOG 2>> $LOG || error 244
 			install_source
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			m-a prepare $KMOD 1>> $LOG 2>> $LOG  || m-a prepare $KMOD  || error 252
 		else
 			# If Headers are not installed we stop with the error Message
@@ -145,9 +130,6 @@ prep()
 		# the Headers by using apt (maybe a Users Kernel) we will exit the Script 
 		# with Error Code 252
 		if [ -d /usr/src/linux-headers-$KERNEL ]; then
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y install linux-headers-$KERNEL 1>> $LOG 2>> $LOG || error 252
 		fi
 		# We check here again if Headers are there. Just in case apt is reporting
@@ -156,9 +138,6 @@ prep()
 		# Running m-a prepare
 		install_source
 		m-a update 1>> $LOG 2>> $LOG || error 244
-		DEBIAN_FRONTEND="noninteractive" \
-		DEBIAN_PRIORITY="critical" \
-		DEBCONF_NOWARNINGS="yes" \
 		m-a prepare $KMOD 1>> $LOG 2>> $LOG || error 252
 	fi
 }
@@ -177,28 +156,16 @@ build() {
 			ln -s /usr/src/linux/include/linux/autoconf.h /usr/src/linux/include/linux/config.h 1>> $LOG 2>> $LOG
 			# We have to make sure nvidia-kernel-common is installed
 			if [ "$EXPERIMENTAL" = 0 ]; then
-				DEBIAN_FRONTEND="noninteractive" \
-				DEBIAN_PRIORITY="critical" \
-				DEBCONF_NOWARNINGS="yes" \
 				apt-get -y install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
 			else
-				DEBIAN_FRONTEND="noninteractive" \
-				DEBIAN_PRIORITY="critical" \
-				DEBCONF_NOWARNINGS="yes" \
 				apt-get -y install nvidia-kernel-common/experimental 1>> $LOG 2>> $LOG || error 242
 			fi
 		fi
 		if [ "$KMOD" = "nvidia" ]; then
 			# We have to make sure nvidia-kernel-common is installed
 			if [ "$EXPERIMENTAL" = 0 ]; then
-				DEBIAN_FRONTEND="noninteractive" \
-				DEBIAN_PRIORITY="critical" \
-				DEBCONF_NOWARNINGS="yes" \
 				apt-get -y install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
 			else
-				DEBIAN_FRONTEND="noninteractive" \
-				DEBIAN_PRIORITY="critical" \
-				DEBCONF_NOWARNINGS="yes" \
 				apt-get -y install nvidia-kernel-common/experimental 1>> $LOG 2>> $LOG || apt-get -fy install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
 			fi
 		fi
@@ -208,9 +175,6 @@ build() {
 	# We are cleaning /usr/src from old nvidia debs. Otherwise the ls command for $DEB will create a List
 	rm -f /usr/src/$KMOD*$KERNEL*.deb 1>> $LOG 2>> $LOG
 	# Building the Module
-	DEBIAN_FRONTEND="noninteractive" \
-	DEBIAN_PRIORITY="critical" \
-	DEBCONF_NOWARNINGS="yes" \
 	m-a a-b -i $KMOD 1>> $LOG 2>> $LOG || error 250
 	echo "* ${MAGENTA}$KMOD ${GREEN}build successfull.${NORMAL}"
 }
@@ -233,39 +197,41 @@ install_deb()
 	if [ ! "$?" = "0" ]; then
 		# If exitcode from dpkg is not 0 maybe we have to install dependencies.
 		# We try an apt-get -f install.
-		DEBIAN_FRONTEND="noninteractive" \
-		DEBIAN_PRIORITY="critical" \
-		DEBCONF_NOWARNINGS="yes" \
 		apt-get -fy install 1>> $LOG 2>> $LOG || error 248
 	fi	
 	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
 		# We have to install nvidia-glx to get the Driver working
 		if [ "$EXPERIMENTAL" = 0 ]; then
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y install nvidia-glx-legacy 1>> $LOG 2>> $LOG || error 243
 		else
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y install nvidia-glx-legacy/experimental 1>> $LOG 2>> $LOG || error 243
 		fi
 	fi
 	if [ "$KMOD" = "nvidia" ]; then
 		# We have to install nvidia-glx to get the Driver working
 		if [ "$EXPERIMENTAL" = 0 ]; then
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y install nvidia-glx 1>> $LOG 2>> $LOG || error 243
 		else
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -y install nvidia-glx/experimental 1>> $LOG 2>> $LOG || error 243
 		fi
 	fi
+}
+
+AIGLX_INST()
+{
+	case $KMOD in
+		nvidia) 
+		nvidia-xconfig --render-accel 2>&1 /dev/null
+		nvidia-xconfig --allow-glx-with-composite 2>&1 /dev/null
+		;;
+		nvidia-kernel-legacy) 
+		echo "AIGLX will not be enabled for Legacy Cards !"
+		;;
+		fglrx) echo "AIGLX will not be enabled for ATI Cards !"
+		;;
+		*) error 235
+		;;
+	esac
 }
 
 write_xorg() 
@@ -289,18 +255,13 @@ write_xorg()
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
 		if [ "EXPERIMENTAL" = 0 ]; then
 			# For NVIDIA Cards we use nvidia-xconfig to change the xorg.conf
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
 		else
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -fy install nvidia-xconfig/experimental nvidia-settings/experimental 1>> $LOG 2>> $LOG || apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
 		fi
 		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
 		nvidia-xconfig -o /etc/X11/xorg.conf -s
+		[ "AIGLX_CFG" = 1 ] && AIGLX_INST
 	fi
 	
 	# Changing entry's for nvidia-legacy using Perl oneliners.
@@ -311,19 +272,14 @@ write_xorg()
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
 		if [ "EXPERIMENTAL" = 0 ]; then
 		# For NVIDIA Cards we use nvidia-xconfig to change the xorg.conf
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -fy install nvidia-xconfig nvidia-settings 1>> $LOG 2>> $LOG || error 241
 		else
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -fy install nvidia-xconfig/experimental 1>> $LOG 2>> $LOG || apt-get -fy install nvidia-xconfig nvidia-settings 1>> $LOG 2>> $LOG || error 241
 			apt-get -fy install nvidia-settings/experimental 1>> $LOG 2>> $LOG || apt-get -fy install nvidia-settings 1>> $LOG 2>> $LOG || error 241
 		fi
 		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
                 nvidia-xconfig -o /etc/X11/xorg.conf -s
+		[ "AIGLX_CFG" = 1 ] && AIGLX_INST
 	fi
 
 	# Changing entry's for fglrx using Perl oneliners.
@@ -334,18 +290,13 @@ write_xorg()
 		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"fglrx"/g'	$XORGCFG
 		if [ "EXPERIMENTAL" = 0 ]; then
 		# For ATI Cards we use aticonfig to change the xorg.conf
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -fy install fglrx-driver fglrx-control 1>> $LOG 2>> $LOG || error 241
 		else
-			DEBIAN_FRONTEND="noninteractive" \
-			DEBIAN_PRIORITY="critical" \
-			DEBCONF_NOWARNINGS="yes" \
 			apt-get -fy install fglrx-driver/experimental fglrx-control/experimental 1>> $LOG 2>> $LOG || apt-get -fy install fglrx-driver fglrx-control 1>> $LOG 2>> $LOG || error 241
 		fi
 		#echo "* ${BLUE}Running aticonfig to configure your xorg.${NORMAL}"
 		aticonfig --initial --input=/etc/X11/xorg.conf --output=/etc/X11/xorg.conf
+		[ "AIGLX_CFG" = 1 ] && AIGLX_INST
 	fi
 }
 
@@ -363,56 +314,81 @@ sources_backup() {
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
-sources_restore() {
+sources_restore() 
+{
 	# Restoring original sources.list
 	cp /etc/apt/sources.backup /etc/apt/sources.list 1>> $LOG 2>> $LOG
 }
 
-clean_up() {
+clean_up() 
+{
+	[ "$NETWORK" = 0 ] && error 236
 	# Run apt-get update to avoid apt error messages
 	echo "* ${BLUE}Cleaning up. Please wait.${NORMAL}"
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
-install_me() {
+install_me() 
+{
+	[ "$NETWORK" = 0 ] && error 236
 	# If someone tries to run this Script without installing the Package, we try to install it
 	apt-get install sidux-binary-gfx 1>> /dev/null 2>> /dev/null || exit 1
 	/usr/sbin/install-binary-gfx || exit 1
 	exit 0
 }
 
-nuke_me() {
+nuke_me() 
+{
 	# If someone is pressing STRG+C we restore backed up sources.list before we left
 	[ -f /etc/apt/sources.backup ] && cp /etc/apt/sources.backup /etc/apt/sources.list
 	rm -f /etc/apt/sources.backup 1>> /dev/null 2>> /dev/null 
-	apt-get update 1>> /dev/null 2>> /dev/null || error 245
+	[ "NETWORK" = 1 ] && apt-get update 2>&1 /dev/null
 }
 
-detect_card() {
+detect_card() 
+{
 	# Try to identify which kind of GFX Board we have
 	lspci | grep nVidia > /dev/null && KMOD="nvidia"
 	lspci | grep ATI > /dev/null && KMOD="fglrx"
+	echo "${BLUE}Detecting GFX Cards${NORMAL}"
+	# That option will show User the Card which will be detected by this Script
+	if [ "$KMOD" = "fglrx" ]; then
+		echo "${BLUE}ATI Card found.${NORMAL}"
+	else
+		if [ -r /usr/share/sidux-binary-gfx/detect_nvcard ]; then
+			. /usr/share/sidux-binary-gfx/detect_nvcard
+		else
+			echo "/usr/share/sidux-binary-gfx/detect_nvcard not found."
+			echo "Please check Installation of sidux-binary-gfx."
+			exit 1
+		fi
+	fi
 }
 
-check_live() {
+check_live() 
+{
 	# This will check if we are in livemode and run restartx automatically
 	if [ "$FLL_DISTRO_MODE" = "live" ]; then
 		restartx &
 	fi
 }
 
-help_me() {
+help_me() 
+{
 	echo "Usage $0 [options] " >&2
-	echo " -a 	Automatic mode" >&2
-	echo " -b MOD	Build only" >&2
-	echo " -d 	Detect Card only" >&2
-	echo " -e	Use Experimental" >&2 
-	echo " -v	Verbose" >&2
+	echo " -a | --auto		Automatic mode" >&2
+	echo " -b | --build 		MOD Build only" >&2
+	echo " -d | --detect		Detect Card only" >&2
+	echo " -e | --experimental	Use Experimental" >&2
+	echo " -u | --update		Update Script" >&2
+	echo " -v | --verbose		Verbose" >&2
 	echo ""
 	echo "Valid MOD's are nvidia, nvidia-legacy and fglrx."
 }
 
-main() {
+main() 
+{
+	[ "$NETWORK" = 0 ] && error 236
 	detect_card
 	sources_backup
 	dpkg -l | grep sidux-binary-gfx 1>> /dev/null 2>> /dev/null || install_me 
@@ -437,7 +413,6 @@ main() {
 			nv) NVSRC="none";;
 			*) NVSRC="none";;
 		esac
-		[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ NVSRC: $NVSRC.${NORMAL}"
 	fi
 	
 	# We call all the function's to install the Driver automatically
@@ -454,6 +429,23 @@ main() {
 	echo ""
 	echo "${GREEN}Script finished.${NORMAL}"
 	exit 0
+}
+
+update_me() 
+{
+	[ "$NETWORK" = 0 ] && error 236
+	CVERSION=$(apt-cache policy sidux-binary-gfx | grep \* | awk '{print $2}')
+	echo "${BLUE}Updating Script${NORMAL}"
+	echo ""
+	echo "Current Version: ${BLUE}$CVERSION${NORMAL}"
+	# This will update the Script
+	create_log
+	sources_backup
+	apt-get -y upgrade sidux-scripts sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
+	UVERSION=$(apt-cache policy sidux-binary-gfx | grep \* | awk '{print $2}')
+	echo "Updated to: ${BLUE}$UVERSION${NORMAL}"
+	sources_restore
+	clean_up
 }
 
 # We have to be root. Oherwise we exit with exitcode 1
@@ -490,7 +482,6 @@ if [ "$FLL_DISTRO_MODE" = "live" ]; then
 fi
 
 # Initializing basic Variables
-DEBUG=0
 KMOD="none"
 ARCH=$(uname -m)
 KERNEL=$(uname -r)
@@ -503,6 +494,17 @@ MEMFREE=$(grep MemFree /proc/meminfo | awk '{print $2}')
 DISKFILTER=$(df -k /usr/src | awk '{print $6}' | grep \/)
 DISKFREE=$(df -k /usr/src | grep $DISKFILTER | awk '{print $2}')
 EXPERIMENTAL=0
+ibg_detect=0
+ibg_detect=0
+ibg_auto=0
+DEBIAN_FRONTEND="noninteractive"
+DEBIAN_PRIORITY="critical" 
+DEBCONF_NOWARNINGS="yes" 
+AIGLX_CFG=0
+BERYL=0
+NETWORK=1
+ping -c 1 ftp.debian.org 2>&1 /dev/null || NETWORK=0
+NETWORK=1 #temp fix
 
 # Reset fb color mode
 RESET="]R"
@@ -543,35 +545,89 @@ uname -r | grep "\-slh\-" > /dev/null && SLH_KERNEL="TRUE"
 uname -r | grep "\-slh64\-"  > /dev/null && SLH_KERNEL="TRUE"
 trap nuke_me exit
 
-# We can have Parameters. By default without Parameters the Script will 
-# do all Operations automatically. If we just want to build the Package
+# We can have Parameters. If we just want to build the Package
 # we can append the -b Parameter
 VERBOSE=0
 UPDATE=0
-while getopts ab:ediuvh opt 
-do
- case $opt in
-   # We can run the Script in verbose Mode to see more output and the logfile after the execution.	
-	v) DEBUG=1 
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DIALOG: $_l_frontend.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ FLL_IMAGE_DIR: $FLL_IMAGE_DIR.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ FLL_DISTRO_MODE: $FLL_DISTRO_MODE.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ ARCH: $ARCH.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ KERNEL: $KERNEL.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ SLH_KERNEL: $SLH_KERNEL.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DATE: $DATE.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ ME: $ME.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DATABASE: $DATABASE.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ MEMFREE: $MEMFREE.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ DISKFREE: $DISKFREE.${NORMAL}"
-	[ "$DEBUG" = 1 ] && echo "${YELLOW}+++ EXPERIMENTAL: $EXPERIMENTAL.${NORMAL}"
-		;;
-	a) # Building automatically
-		main
+
+ARGS=$(
+	getopt \
+		--name "install-binary-gfx" \
+		--options ab:eduvh \
+		--long auto,experimental,build:,verbose,detect,help,update,aiglx,beryl \
+		-- $@
+)
+
+eval set -- "$ARGS"
+
+while true; do
+	case $1 in
+		-v|--verbose) 
+			set -x
+			;;
+		-a|--auto) 
+			ibg_auto=1
+			;;
+		-b|--build) 
+			shift
+			KMOD=$1
+			ibg_build=1
+			;;
+		-d|--detect) 
+			ibg_detect=1
+			;;
+		-e|--experimental) 
+			EXPERIMENTAL=1
+			;;
+		-u|--update) 
+			update_me
+			exit 0
+			;;	
+		-h|--help) 
+			help_me
+			exit 0
+			;;
+		--aiglx)
+			AIGLX_CFG=1
+			;;
+		--beryl)
+			BERYL=1
+			;;
+		--)
+			shift
+			break
+			;;
+		*)
+			shift
+			break
+			;;
+	esac
+	shift
+done
+
+
+if [ "$ibg_detect" = 1 ]; then
+	detect_card
+	exit 0
+fi
+
+if [ "$EXPERIMENTAL" = 1 ]; then
+	[ "$NETWORK" = 0 ] && error 236
+	echo "${RED}Using Experimantal Source"
+	echo "Its not recommended to use the experimental source."
+	echo "There is no support from the sidux Team for that Function.${NORMAL}"
+	echo ""
+	echo "${CYAN}Are you sure you want to use experimental? (yes/no)${NORMAL}"
+	read answer 
+	if [ ! "$answer" = "yes" ]; then
 		exit 0
-	;;
-	b) echo "${BLUE}Building $OPTARG${NORMAL}"
-	KMOD=$OPTARG
+	fi
+	main
+fi
+
+if [ "$ibg_build" = 1 ]; then
+	[ "$NETWORK" = 0 ] && error 236
+	echo "${BLUE}Building $OPTARG${NORMAL}"
 	MODTEST="FALSE"
 	BUILDONLY="TRUE"
 	[ $KMOD = "nvidia" ] && MODTEST="TRUE"
@@ -585,59 +641,29 @@ do
 	sources_restore
 	clean_up
 	exit 0
-		;;
-	d) echo "${BLUE}Detecting NVIDIA Cards${NORMAL}"
-	# That option will show User the Card which will be detected by this Script
-	detect_card
-	[ "$DEBUG" = 1 ] && echo "+++ KMOD: $KMOD."
-	if [ "$KMOD" = "fglrx" ]; then
-		echo "${BLUE}ATI Card found.${NORMAL}"
-	else
-		if [ -r /usr/share/sidux-binary-gfx/detect_nvcard ]; then
-			[ "$DEBUG" = 1 ] && echo "+++ DATABASE found"
-			. /usr/share/sidux-binary-gfx/detect_nvcard
-		else
-			echo "/usr/share/sidux-binary-gfx/detect_nvcard not found."
-			echo "Please check Installation of sidux-binary-gfx."
-			exit 1
-		fi
-	fi
-	exit 0
-		;;
-	e) echo "${RED}Using Experimantal Source"
-	echo "Its not recommended to use the experimental source."
-	echo "There is no support from the sidux Team for that Function.${NORMAL}"
-	echo ""
-	echo "${CYAN}Are you sure you want to use experimental? (yes/no)${NORMAL}"
-	read answer 
-	if [ ! "$answer" = "yes" ]; then
-		exit 0
-	fi
-	echo ""
-	EXPERIMENTAL=1
-	main
-		;;
-	u) echo "${BLUE}Updating Script${NORMAL}"
-	# This will update the Script
-	create_log
-	sources_backup
-	DEBIAN_FRONTEND="noninteractive" \
-	DEBIAN_PRIORITY="critical" \
-	DEBCONF_NOWARNINGS="yes" \
-	apt-get -y upgrade sidux-scripts sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
-	sources_restore
-	clean_up
-	exit 0
-		;;
-	# Of course we have a help Option.	
-	\?|h) 
-		help_me
-		exit 0
-		;;
-  esac
-done
+fi
 
-help_me
+if [ "$ibg_auto" = 1 ]; then
+	[ "$NETWORK" = 0 ] && error 236
+	main
+	exit 0
+fi
+
+if [ "$BERYL" = 1 ]; then
+	echo "${BLUE}Installing beryl{NORMAL}"
+	APTSRC="deb http://download.tuxfamily.org/myberyl/shame/debian-sid/beryl-svn/relatively-stable/ ./"
+	PACKAGES="beryl compiz beryl-shame beryl-plugins-shame beryl-manager emerald emerald-themes aquamarine"
+	BERYLSRC=1
+	grep beryl-svn /etc/apt/sources.list || BERYLSRC=0 
+	if [ "BERYLSRC" = 0 ]; then
+		echo "$APTSRC" >> /etc/apt/sources.list
+		wget http://download.tuxfamily.org/myberyl/shame/A42A6CF5.gpg -O- | sudo apt-key add -
+		apt-get update 2>&1 /dev/null || error 245
+	fi
+	apt-get install $PACKAGES || error 234
+	echo "${GREEN}Beryl installed succesfully {NORMAL}"
+	echo "${BLUE}Upgrading beryl-shame{NORMAL}"
+	beryl-shame upgrade 2>&1 /dev/null
+fi
 
 #END
-

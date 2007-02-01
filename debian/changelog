@@ -1,8 +1,15 @@
 sidux-binary-gfx (1.0.12) UNRELEASED; urgency=low
 
+  [ Stefan Lippers-Hollmann ]
   * NOT RELEASED YET
 
- -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Sun, 28 Jan 2007 12:28:44 +0100
+  [ Andreas Weber ]
+  * cmdline Parsing changed
+  * AIGLX Support added
+  * Beryl Support added (undocumented Feature)
+  * Code cleaned a bit up
+
+ -- Andreas Weber <andreas@it-weber.com>  Thu,  1 Feb 2007 21:27:56 +0100
 
 sidux-binary-gfx (1.0.11) unstable; urgency=low
 
