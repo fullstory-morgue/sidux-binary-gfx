@@ -117,6 +117,7 @@ prep()
 		if [ -d /usr/src/linux-headers-$KERNEL ]; then
 			echo "* ${BLUE}Kernel Headers found.${NORMAL}"
 			echo "* ${BLUE}Running module-assistant prepare.${NORMAL}"
+			apt-get -y --purge remove nvidia-kernel-source 1>> $LOG 2>> $LOG
 			m-a update 1>> $LOG 2>> $LOG || error 244
 			install_source
 			m-a prepare $KMOD 1>> $LOG 2>> $LOG  || m-a prepare $KMOD  || error 252
@@ -436,7 +437,10 @@ main()
 	sources_restore
 	clean_up
 	check_live
-	
+}
+
+end_me()
+{
 	# We are done :)
 	echo ""
 	echo "${GREEN}Script finished.${NORMAL}"
@@ -699,5 +703,7 @@ if [ "$BERYL" = 1 ]; then
 	echo "* ${BLUE}Upgrading beryl-shame.${NORMAL}"
 	beryl-shame upgrade 1> /dev/null 2> /dev/null
 fi
+
+end_me
 
 #END
