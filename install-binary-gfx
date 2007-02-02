@@ -358,6 +358,7 @@ detect_card()
 	else
 		if [ -r /usr/share/sidux-binary-gfx/detect_nvcard ]; then
 			. /usr/share/sidux-binary-gfx/detect_nvcard
+			echo ""
 		else
 			echo "/usr/share/sidux-binary-gfx/detect_nvcard not found."
 			echo "Please check Installation of sidux-binary-gfx."
@@ -370,7 +371,9 @@ check_live()
 {
 	# This will check if we are in livemode and run restartx automatically
 	if [ "$FLL_DISTRO_MODE" = "live" ]; then
-		restartx &
+		#restartx &
+		echo "${RED}Restarting X is currently not working. It will restart your Computer. Sorry.${NORMAL}"
+		echo ""
 	fi
 }
 
@@ -405,7 +408,7 @@ help_me()
 main() 
 {
 	[ "$NETWORK" = 0 ] && error 236
-	detect_card
+	[ "$KMOD" = "none" ] && detect_card
 	sources_backup
 	dpkg -l | grep sidux-binary-gfx 1>> /dev/null 2>> /dev/null || install_me 
 	
@@ -416,13 +419,6 @@ main()
 	fi
 	
 	if [ $KMOD = "nvidia" ]; then
-		if [ -f $DATABASE ]; then
-			. $DATABASE
-			echo ""
-		else
-			error 246
-		fi
-	
 		case $DRIVER in
 			legacy) NVSRC="nvidia-kernel-legacy-source"; KMOD="nvidia-kernel-legacy";;
 			nvidia) NVSRC="nvidia-kernel-source";;
@@ -549,6 +545,16 @@ WHITE="[1;37m"
 echo "${BLUE}Script to install binary Drivers for NVIDIA/ATI Grafik Cards${NORMAL}"
 echo ""
 
+if [ "$FLL_DISTRO_MODE" = "live" ]; then
+	echo "${RED}This Script is currently not working in livemode because of the broken restartx Package.${NORMAL}"
+	echo "Do you want to run it anyway?(yes/no)"
+	read anyway
+	if [ ! "$anyway" = "yes" ]; then
+		exit 0
+	fi
+	echo ""
+fi
+
 # We need 50MB free to build and install the Module
 if [ "$DISKFREE" -lt "50000" ]; then
 	echo "${RED}There is not enough Diskspace available to install/build a Kernel Module.${NORMAL}"
@@ -637,6 +643,7 @@ if [ "$EXPERIMENTAL" = 1 ]; then
 	if [ ! "$answer" = "yes" ]; then
 		exit 0
 	fi
+	echo ""
 	main
 fi
 
@@ -666,26 +673,28 @@ fi
 
 if [ "$AIGLX_CFG" = 1 ]; then
 	echo "* ${BLUE}Activating AIGLX.${NORMAL}"
-	if [ "$KMOD" = "none" ]; then
-		detect_card
-	fi
+	[ "$KMOD" = "none" ] &&	detect_card
 	AIGLX_INST
 fi
 
 if [ "$BERYL" = 1 ]; then
+	[ "$KMOD" = "none" ] && detect_card
+	if [[ "$LOG" ]]; then
+		create_log
+	fi
 	echo "* ${BLUE}Installing beryl.${NORMAL}"
 	APTSRC="deb http://download.tuxfamily.org/myberyl/shame/debian-sid/beryl-svn/relatively-stable/ ./"
 	PACKAGES="beryl compiz beryl-shame beryl-plugins-shame beryl-manager emerald emerald-themes aquamarine"
 	BERYLSRC=1
-	grep beryl-svn /etc/apt/sources.list 1> /dev/null 2> /dev/null || BERYLSRC=0 
-	if [ "BERYLSRC" = 0 ]; then
+	grep myberyl /etc/apt/sources.list 1> /dev/null 2> /dev/null || BERYLSRC=0 
+	if [ "$BERYLSRC" = 0 ]; then
 		echo "" >> /etc/apt/sources.list
 		echo "#Beryl" >> /etc/apt/sources.list
 		echo "$APTSRC" >> /etc/apt/sources.list
 		wget http://download.tuxfamily.org/myberyl/shame/A42A6CF5.gpg -O- | sudo apt-key add -
-		apt-get update 2>&1 /dev/null || error 245
+		apt-get update 1> /dev/null 2> /dev/null || error 245
 	fi
-	apt-get install $PACKAGES 1> /dev/null 2> /dev/null || error 234
+	apt-get -y install $PACKAGES 1> /dev/null 2> /dev/null || error 234
 	echo "* ${GREEN}Beryl installed succesfully${NORMAL}"
 	echo "* ${BLUE}Upgrading beryl-shame.${NORMAL}"
 	beryl-shame upgrade 1> /dev/null 2> /dev/null
