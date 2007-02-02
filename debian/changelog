@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.12) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.12) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * cmdline Parsing changed
   * AIGLX Support added
   * Beryl Support added (undocumented Feature)
