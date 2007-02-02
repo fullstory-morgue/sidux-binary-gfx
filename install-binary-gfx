@@ -12,6 +12,9 @@
 #	21.01.2007 m-a update added
 #	22.01.2007 nvidia-glx and nvidia-common added as m-a isn't installing that Packages automatically 
 #	24.01.2007 nvidia-xconfig added to change the xorg automatically
+#	01.02.2007 AIGLX Support added
+#	01.02.2007 Beryl Support added
+#	01.02.2007 apt-get install fixed.
 #
 
 error() 
@@ -221,8 +224,8 @@ AIGLX_INST()
 {
 	case $KMOD in
 		nvidia) 
-		nvidia-xconfig --render-accel 2>&1 /dev/null
-		nvidia-xconfig --allow-glx-with-composite 2>&1 /dev/null
+		nvidia-xconfig --render-accel -s
+		nvidia-xconfig --allow-glx-with-composite -s
 		;;
 		nvidia-kernel-legacy) 
 		echo "AIGLX will not be enabled for Legacy Cards !"
@@ -261,7 +264,6 @@ write_xorg()
 		fi
 		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
 		nvidia-xconfig -o /etc/X11/xorg.conf -s
-		[ "AIGLX_CFG" = 1 ] && AIGLX_INST
 	fi
 	
 	# Changing entry's for nvidia-legacy using Perl oneliners.
@@ -279,7 +281,6 @@ write_xorg()
 		fi
 		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
                 nvidia-xconfig -o /etc/X11/xorg.conf -s
-		[ "AIGLX_CFG" = 1 ] && AIGLX_INST
 	fi
 
 	# Changing entry's for fglrx using Perl oneliners.
@@ -296,7 +297,6 @@ write_xorg()
 		fi
 		#echo "* ${BLUE}Running aticonfig to configure your xorg.${NORMAL}"
 		aticonfig --initial --input=/etc/X11/xorg.conf --output=/etc/X11/xorg.conf
-		[ "AIGLX_CFG" = 1 ] && AIGLX_INST
 	fi
 }
 
@@ -311,6 +311,7 @@ sources_backup() {
 		echo "deb http://ftp.debian.org/debian/ sid main contrib non-free" > "/etc/apt/sources.list" 
 		echo "deb http://sidux.com/debian/ sid main fix.main contrib non-free" >> "/etc/apt/sources.list"
 	fi
+	echo "* ${BLUE}Running apt-get update.${NORMAL}"
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
@@ -350,7 +351,7 @@ detect_card()
 	# Try to identify which kind of GFX Board we have
 	lspci | grep nVidia > /dev/null && KMOD="nvidia"
 	lspci | grep ATI > /dev/null && KMOD="fglrx"
-	echo "${BLUE}Detecting GFX Cards${NORMAL}"
+	echo "* ${BLUE}Detecting GFX Cards${NORMAL}"
 	# That option will show User the Card which will be detected by this Script
 	if [ "$KMOD" = "fglrx" ]; then
 		echo "${BLUE}ATI Card found.${NORMAL}"
@@ -375,15 +376,30 @@ check_live()
 
 help_me() 
 {
-	echo "Usage $0 [options] " >&2
+	echo "${BLUE}Usage:${NORMAL} $0 [options] " >&2
 	echo " -a | --auto		Automatic mode" >&2
-	echo " -b | --build 		MOD Build only" >&2
+	echo " -b | --build 		MOD Build only (nvidia|nvidia-legacy|fglrx)" >&2
 	echo " -d | --detect		Detect Card only" >&2
 	echo " -e | --experimental	Use Experimental" >&2
 	echo " -u | --update		Update Script" >&2
 	echo " -v | --verbose		Verbose" >&2
+	echo " --aiglx		Activate AIGLX" >&2
 	echo ""
-	echo "Valid MOD's are nvidia, nvidia-legacy and fglrx."
+	echo "${BLUE}Examples:${NORMAL}"
+	echo "${MAGENTA}install-binary-gfx -a${NORMAL} (This will detect you Card and install the sid Drivers automatically.)"
+	echo "${MAGENTA}install-binary-gfx -a --aiglx${NORMAL} (This will detect you Card and install the sid Drivers automatically and activate AIGLX.)"
+	echo "${MAGENTA}install-binary-gfx -e${NORMAL} (This will detect you Card and install the ${RED}experimental${NORMAL} Drivers automatically.)"
+	echo "${MAGENTA}install-binary-gfx -e${NORMAL} (This will detect you Card and install the ${RED}experimental${NORMAL} Drivers automatically in debug mode)"
+	echo "${MAGENTA}install-binary-gfx -b nvidia${NORMAL} (This will just build the nvidia-module....deb in /usr/src. The same works with fglrx and nvidia-legacy.)"
+	echo "${MAGENTA}install-binary-gfx -d${NORMAL} (This will detect you Card and just print out the Information.)"
+	echo "${MAGENTA}install-binary-gfx --aiglx${NORMAL} (This will activate AIGLX.)"
+	echo "${MAGENTA}install-binary-gfx -u${NORMAL} (This will update this Script. Please note that will not be done by dist-upgrade as long as you"
+	echo "                       have contrib for the sidux repository activated in your sources.list.)"
+	echo ""
+	echo "${BLUE}Troubleshooting:${NORMAL}"
+	echo "If the Script fails for your Card please run the Script in debug mode and post the output as well as the log file"
+	echo "/var/log/sidux-CARD-installer.log in the Sidux Forum or http://paste.debian.net and contact me (webera) in ${BLUE}#sidux${NORMAL}."
+	echo ""
 }
 
 main() 
@@ -503,8 +519,7 @@ DEBCONF_NOWARNINGS="yes"
 AIGLX_CFG=0
 BERYL=0
 NETWORK=1
-ping -c 1 ftp.debian.org 2>&1 /dev/null || NETWORK=0
-NETWORK=1 #temp fix
+#ping -c 1 ftp.debian.org 2>&1 /dev/null || NETWORK=0
 
 # Reset fb color mode
 RESET="]R"
@@ -649,21 +664,31 @@ if [ "$ibg_auto" = 1 ]; then
 	exit 0
 fi
 
+if [ "$AIGLX_CFG" = 1 ]; then
+	echo "* ${BLUE}Activating AIGLX.${NORMAL}"
+	if [ "$KMOD" = "none" ]; then
+		detect_card
+	fi
+	AIGLX_INST
+fi
+
 if [ "$BERYL" = 1 ]; then
-	echo "${BLUE}Installing beryl{NORMAL}"
+	echo "* ${BLUE}Installing beryl.${NORMAL}"
 	APTSRC="deb http://download.tuxfamily.org/myberyl/shame/debian-sid/beryl-svn/relatively-stable/ ./"
 	PACKAGES="beryl compiz beryl-shame beryl-plugins-shame beryl-manager emerald emerald-themes aquamarine"
 	BERYLSRC=1
-	grep beryl-svn /etc/apt/sources.list || BERYLSRC=0 
+	grep beryl-svn /etc/apt/sources.list 1> /dev/null 2> /dev/null || BERYLSRC=0 
 	if [ "BERYLSRC" = 0 ]; then
+		echo "" >> /etc/apt/sources.list
+		echo "#Beryl" >> /etc/apt/sources.list
 		echo "$APTSRC" >> /etc/apt/sources.list
 		wget http://download.tuxfamily.org/myberyl/shame/A42A6CF5.gpg -O- | sudo apt-key add -
 		apt-get update 2>&1 /dev/null || error 245
 	fi
-	apt-get install $PACKAGES || error 234
-	echo "${GREEN}Beryl installed succesfully {NORMAL}"
-	echo "${BLUE}Upgrading beryl-shame{NORMAL}"
-	beryl-shame upgrade 2>&1 /dev/null
+	apt-get install $PACKAGES 1> /dev/null 2> /dev/null || error 234
+	echo "* ${GREEN}Beryl installed succesfully${NORMAL}"
+	echo "* ${BLUE}Upgrading beryl-shame.${NORMAL}"
+	beryl-shame upgrade 1> /dev/null 2> /dev/null
 fi
 
 #END
