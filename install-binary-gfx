@@ -47,6 +47,7 @@ error()
 		234) ERR_D="Beryl Installation failed !";;
 		233) ERR_D="Patching the Source failed !";;
 		232) ERR_D="devscripts Install failed !";;
+		231) ERR_D="Could not fetch Source Package !";;
 		*) ERR_D="Unexpected Error !";;
 	esac
 	echo "${RED}! ERROR: ($ERR_C) $ERR_D${NORMAL}"
@@ -99,9 +100,6 @@ install_source()
 		else
 			apt-get -y --reinstall install fglrx-kernel-src/experimental module-assistant 1>> $LOG 2>> $LOG || error 238
 		fi	
-		pushd /usr/src >/dev/null
-		tar xvjpf fglrx.tar.bz2 >/dev/null
-		popd >/dev/null	
 	fi
 }
 
@@ -115,8 +113,11 @@ prep()
 	# Part of any Apt Repository. We have to have manually Funktion here to install 
 	# the Headers.
 	apt-get -yf --purge remove nvidia* fglrx* 1>> $LOG 2>> $LOG  || apt-get -yf install 1>> $LOG 2>> $LOG
+	apt-get -yf --purge remove fglrx-kernel-src 1>> $LOG 2>> $LOG  || apt-get -yf install 1>> $LOG 2>> $LOG
 	rm -f /usr/src/nvidia* 1>> $LOG 2>> $LOG
 	rm -rf /usr/src/modules/nvidia* 1>> $LOG 2>> $LOG
+	rm -f /usr/src/fglrx* 1>> $LOG 2>> $LOG
+	rm -rf /usr/src/modules/fglrx* 1>> $LOG 2>> $LOG
 	if [ $SLH_KERNEL = "TRUE" ]; then
 		# If Headers are already installed we are fine to run m-a prepare
 		if [ -d /usr/src/linux-headers-$KERNEL ]; then
@@ -125,6 +126,8 @@ prep()
 			apt-get -y --purge remove nvidia-kernel-source 1>> $LOG 2>> $LOG
 			m-a update 1>> $LOG 2>> $LOG || error 244
 			install_source
+			m-a get $KMOD 1>> $LOG 2>> $LOG || error 231
+			m-a unpack $KMOD 1>> $LOG 2>> $LOG
 			m-a prepare $KMOD 1>> $LOG 2>> $LOG  || m-a prepare $KMOD  || error 252
 		else
 			# If Headers are not installed we stop with the error Message
@@ -147,6 +150,8 @@ prep()
 		# Running m-a prepare
 		install_source
 		m-a update 1>> $LOG 2>> $LOG || error 244
+		m-a get $KMOD 1>> $LOG 2>> $LOG || error 231
+		m-a unpack $KMOD 1>> $LOG 2>> $LOG
 		m-a prepare $KMOD 1>> $LOG 2>> $LOG || error 252
 	fi
 }
@@ -162,13 +167,12 @@ patch_src() {
 				8.28*) 
 					pushd /usr/src >/dev/null
 					apt-get -y install devscripts 1>> $LOG 2>> $LOG || error 232
-					cp /usr/share/sidux-binary-gfx/fglrx.tar.bz2 /usr/src/
-					tar xjpf fglrx.tar.bz2 >/dev/null
+					tar xjpf /usr/share/sidux-binary-gfx/fglrx.tar.bz2 >/dev/null
 					popd >/dev/null
 					pushd /usr/src/modules/fglrx >/dev/null
 					DEBFULLNAME="Andreas Weber" \
 					DEBEMAIL="andreas@it-weber.com" \
-					dch --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
+					dch -b --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
 					patch </usr/share/sidux-binary-gfx/firegl_public.8.33.6.patch 1>> $LOG 2>> $LOG 
 					popd >/dev/null
 					echo "* ${BLUE}Source updated from $SRC_VERSION to Version 8.33.6-1.${NORMAL}"
@@ -182,7 +186,7 @@ patch_src() {
 					pushd /usr/src/modules/fglrx >/dev/null
 					DEBFULLNAME="Andreas Weber" \
 					DEBEMAIL="andreas@it-weber.com" \
-					dch --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
+					dch -b --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
 					patch </usr/share/sidux-binary-gfx/firegl_public.8.33.6.patch 1>> $LOG 2>> $LOG 
 					popd >/dev/null
 					echo "* ${BLUE}Source updated from $SRC_VERSION to Version 8.33.6-1.${NORMAL}"
@@ -192,7 +196,7 @@ patch_src() {
 					patch -p1 </usr/share/sidux-binary-gfx/firegl_public.8.33.6.patch 1>> $LOG 2>> $LOG
 					DEBFULLNAME="Andreas Weber" \
 					DEBEMAIL="andreas@it-weber.com" \
-					dch --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
+					dch -b --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
 					popd >/dev/null
 					echo "* ${BLUE}Applying Patch for fglrx $SRC_VERSION done.${NORMAL}"
 				;;
@@ -310,9 +314,6 @@ write_xorg()
 	# Changing entry's for nvidia using Perl oneliners.
 	if [ $KMOD = "nvidia" ]; then
 		# The Perl oneliners are just a Fallback in case nvidia-xconfig will fail to install
-		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver\t"nvidia"/g'	$XORGCFG
-		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"nvidia"/g'	$XORGCFG 
-		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
 		if [ "EXPERIMENTAL" = 0 ]; then
 			# For NVIDIA Cards we use nvidia-xconfig to change the xorg.conf
 			apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
@@ -320,15 +321,12 @@ write_xorg()
 			apt-get -fy install nvidia-xconfig/experimental nvidia-settings/experimental 1>> $LOG 2>> $LOG || apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
 		fi
 		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
-		nvidia-xconfig -o /etc/X11/xorg.conf -s
+		nvidia-xconfig -o /etc/X11/xorg.conf -s 1>> $LOG 2>> $LOG
 	fi
 	
 	# Changing entry's for nvidia-legacy using Perl oneliners.
 	if [ $KMOD = "nvidia-kernel-legacy" ]; then
 		# The Perl oneliners are just a Fallback in case nvidia-xconfig will fail to install
-		perl -pi -e 's/^[\s]*Driver\s*"nv"/\tDriver\t"nvidia"/g'	$XORGCFG
-		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"nvidia"/g'	$XORGCFG
-		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"nvidia"/g'	$XORGCFG
 		if [ "EXPERIMENTAL" = 0 ]; then
 		# For NVIDIA Cards we use nvidia-xconfig to change the xorg.conf
 			apt-get -fy install nvidia-xconfig nvidia-settings 1>> $LOG 2>> $LOG || error 241
@@ -337,15 +335,12 @@ write_xorg()
 			apt-get -fy install nvidia-settings/experimental 1>> $LOG 2>> $LOG || apt-get -fy install nvidia-settings 1>> $LOG 2>> $LOG || error 241
 		fi
 		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
-                nvidia-xconfig -o /etc/X11/xorg.conf -s
+                nvidia-xconfig -o /etc/X11/xorg.conf -s 1>> $LOG 2>> $LOG
 	fi
 
 	# Changing entry's for fglrx using Perl oneliners.
 	if [ $KMOD == "fglrx" ]; then
 		# The Perl oneliners are just a Fallback in case aticonfig will fail
-		perl -pi -e 's/^[\s]*Driver\s*"radeon"/\tDriver\t"fglrx"/g'	$XORGCFG 
-		perl -pi -e 's/^[\s]*Driver\s*"fbdev"/\tDriver\t"fglrx"/g'	$XORGCFG
-		perl -pi -e 's/^[\s]*Driver\s*"vesa"/\tDriver\t"fglrx"/g'	$XORGCFG
 		if [ "EXPERIMENTAL" = 0 ]; then
 		# For ATI Cards we use aticonfig to change the xorg.conf
 			apt-get -fy install fglrx-driver fglrx-control 1>> $LOG 2>> $LOG || error 241
@@ -353,7 +348,7 @@ write_xorg()
 			apt-get -fy install fglrx-driver/experimental fglrx-control/experimental 1>> $LOG 2>> $LOG || apt-get -fy install fglrx-driver fglrx-control 1>> $LOG 2>> $LOG || error 241
 		fi
 		#echo "* ${BLUE}Running aticonfig to configure your xorg.${NORMAL}"
-		aticonfig --initial --input=/etc/X11/xorg.conf --output=/etc/X11/xorg.conf
+		aticonfig --initial --input=/etc/X11/xorg.conf --output=/etc/X11/xorg.conf 1>> $LOG 2>> $LOG
 	fi
 }
 
@@ -411,9 +406,20 @@ detect_card()
 	echo "* ${BLUE}Detecting GFX Cards${NORMAL}"
 	# That option will show User the Card which will be detected by this Script
 	if [ "$KMOD" = "fglrx" ]; then
-		echo "${BLUE}ATI Card found.${NORMAL}"
+		echo "* ${BLUE}ATI Card found.${NORMAL}"
+		if [ -r /usr/share/sidux-binary-gfx/detect_aticard ]; then
+			echo ""
+			. /usr/share/sidux-binary-gfx/detect_aticard
+			echo ""
+		else
+			echo "/usr/share/sidux-binary-gfx/detect_aticard not found."
+			echo "Please check Installation of sidux-binary-gfx."
+			exit 1
+		fi
 	else
+		echo "* ${BLUE}NVIDIA Card found.${NORMAL}"
 		if [ -r /usr/share/sidux-binary-gfx/detect_nvcard ]; then
+			echo ""
 			. /usr/share/sidux-binary-gfx/detect_nvcard
 			echo ""
 		else
