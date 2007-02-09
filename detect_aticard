@@ -1,0 +1,32 @@
+#!/bin/sh
+# Author: Andreas Weber
+# Date: 26.12.2006
+# Purpose: Script to detect ati Cards and assign a Driver
+
+# Get Card info 
+ID1=$(lspci -nn | grep "VGA\ compatible\ controller" | cut -d ' ' -f 1)
+ID2=$(lspci -n | grep $ID1 | cut -d ' ' -f 3)
+ID3=$(echo $ID2 | cut -d ':' -f 2 | tr '[a-z]' '[A-Z]')
+
+case $ID3 in
+*) NAME="Unknown ATI Card"; DRIVER="ati"; AIGLX=0;;
+esac
+
+if [ $DRIVER = "ask" ]; then
+	echo "Your Card isn't supported by the linux fglrx driver."
+	echo ""
+	DRIVER="ati"
+fi
+
+case $AIGLX in
+	0) AIGLX="No"
+	;;
+	1) AIGLX="Yes"
+	;;
+esac
+
+echo "Detected Card: $NAME"
+echo "Driver: $DRIVER"
+echo "PCI ID: $ID3"
+echo "AIGLX Support: $AIGLX"
+
