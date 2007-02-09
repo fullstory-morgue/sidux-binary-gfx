@@ -45,6 +45,8 @@ error()
 		236) ERR_D="Network unreachable !";;
 		235) ERR_D="Wrong Module selected !";;
 		234) ERR_D="Beryl Installation failed !";;
+		233) ERR_D="Patching the Source failed !";;
+		232) ERR_D="devscripts Install failed !";;
 		*) ERR_D="Unexpected Error !";;
 	esac
 	echo "${RED}! ERROR: ($ERR_C) $ERR_D${NORMAL}"
@@ -96,7 +98,10 @@ install_source()
 			apt-get -y --reinstall install fglrx-kernel-src module-assistant 1>> $LOG 2>> $LOG || error 238
 		else
 			apt-get -y --reinstall install fglrx-kernel-src/experimental module-assistant 1>> $LOG 2>> $LOG || error 238
-		fi		
+		fi	
+		pushd /usr/src >/dev/null
+		tar xvjpf fglrx.tar.bz2 >/dev/null
+		popd >/dev/null	
 	fi
 }
 
@@ -146,6 +151,57 @@ prep()
 	fi
 }
 
+patch_src() {
+	# This function is to patch the source
+	case $KMOD in
+		nvidia) ;;
+		nvidia-kernel-legacy) ;;
+		fglrx) 
+			SRC_VERSION=$(dpkg-parsechangelog -l/usr/src/modules/fglrx/debian/changelog | sed -n 's/^Version: //p')
+			case $SRC_VERSION in
+				8.28*) 
+					pushd /usr/src >/dev/null
+					apt-get -y install devscripts 1>> $LOG 2>> $LOG || error 232
+					cp /usr/share/sidux-binary-gfx/fglrx.tar.bz2 /usr/src/
+					tar xjpf fglrx.tar.bz2 >/dev/null
+					popd >/dev/null
+					pushd /usr/src/modules/fglrx >/dev/null
+					DEBFULLNAME="Andreas Weber" \
+					DEBEMAIL="andreas@it-weber.com" \
+					dch --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
+					patch </usr/share/sidux-binary-gfx/firegl_public.8.33.6.patch 1>> $LOG 2>> $LOG 
+					popd >/dev/null
+					echo "* ${BLUE}Source updated from $SRC_VERSION to Version 8.33.6-1.${NORMAL}"
+				;;
+				8.31*) 
+					pushd /usr/src >/dev/null
+					apt-get -y install devscripts 1>> $LOG 2>> $LOG || error 232
+					cp /usr/share/sidux-binary-gfx/fglrx.tar.bz2 /usr/src/
+					tar xjpf fglrx.tar.bz2 >/dev/null
+					popd >/dev/null
+					pushd /usr/src/modules/fglrx >/dev/null
+					DEBFULLNAME="Andreas Weber" \
+					DEBEMAIL="andreas@it-weber.com" \
+					dch --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
+					patch </usr/share/sidux-binary-gfx/firegl_public.8.33.6.patch 1>> $LOG 2>> $LOG 
+					popd >/dev/null
+					echo "* ${BLUE}Source updated from $SRC_VERSION to Version 8.33.6-1.${NORMAL}"
+				;;
+				8.33*) 
+					pushd /usr/src/modules/fglrx >/dev/null
+					patch -p1 </usr/share/sidux-binary-gfx/firegl_public.8.33.6.patch 1>> $LOG 2>> $LOG
+					DEBFULLNAME="Andreas Weber" \
+					DEBEMAIL="andreas@it-weber.com" \
+					dch --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
+					popd >/dev/null
+					echo "* ${BLUE}Applying Patch for fglrx $SRC_VERSION done.${NORMAL}"
+				;;
+				*) ;;
+			esac
+		;;
+	esac
+}
+
 build() {
 	# We will create the Package now by using m-a. If the build fails we get the 
 	# Exitcode 250. 
@@ -179,7 +235,7 @@ build() {
 	# We are cleaning /usr/src from old nvidia debs. Otherwise the ls command for $DEB will create a List
 	rm -f /usr/src/$KMOD*$KERNEL*.deb 1>> $LOG 2>> $LOG
 	# Building the Module
-	m-a a-b -i $KMOD 1>> $LOG 2>> $LOG || error 250
+	m-a a-b -Oi $KMOD 1>> $LOG 2>> $LOG || error 250
 	echo "* ${MAGENTA}$KMOD ${GREEN}build successfull.${NORMAL}"
 }
 
@@ -197,7 +253,7 @@ install_deb()
 	cd $OLDPATH
 	echo "* ${BLUE}Installing $DEB${NORMAL}"
 	# Install the deb.
-	dpkg -i /usr/src/$DEB 1>> $LOG 2>> $LOG
+	dpkg -i --no-debsig /usr/src/$DEB 1>> $LOG 2>> $LOG
 	if [ ! "$?" = "0" ]; then
 		# If exitcode from dpkg is not 0 maybe we have to install dependencies.
 		# We try an apt-get -f install.
@@ -431,6 +487,7 @@ main()
 	# We call all the function's to install the Driver automatically
 	create_log
 	prep
+	patch_src
 	build
 	install_deb
 	write_xorg
@@ -663,6 +720,7 @@ if [ "$ibg_build" = 1 ]; then
 	create_log
 	sources_backup
 	prep
+	patch_src
 	build
 	sources_restore
 	clean_up
