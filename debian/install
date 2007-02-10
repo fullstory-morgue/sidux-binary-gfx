@@ -1,2 +1,5 @@
 install-binary-gfx	usr/sbin/
 detect_nvcard		usr/share/sidux-binary-gfx/
+detect_aticard  	usr/share/sidux-binary-gfx/
+fglrx.tar.bz2  		usr/share/sidux-binary-gfx/
+firegl_public.8.33.6.patch	usr/share/sidux-binary-gfx/  
