@@ -7,8 +7,9 @@ sidux-binary-gfx (1.0.13) unstable; urgency=low
   [ Stefan Lippers-Hollmann ]
   * do not interfere with upcoming debian packages.
   * do not claim to be the maintainer.
+  * fix cdbs weirdness.
 
- -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Tue, 13 Feb 2007 00:34:38 +0100
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Tue, 13 Feb 2007 00:36:26 +0100
 
 sidux-binary-gfx (1.0.12) unstable; urgency=low
 
