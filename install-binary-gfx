@@ -172,10 +172,11 @@ patch_src() {
 					pushd /usr/src/modules/fglrx >/dev/null
 					DEBFULLNAME="Andreas Weber" \
 					DEBEMAIL="andreas@it-weber.com" \
-					dch -b --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
+					dch -b --newversion="8.33.6-0+c0.sidux.1" "Non-maintainer upload."
+					dch "Source updated to Version 8.33.6-0+c0.sidux.1 and patched for 2.6.20."
 					patch </usr/share/sidux-binary-gfx/firegl_public.8.33.6.patch 1>> $LOG 2>> $LOG 
 					popd >/dev/null
-					echo "* ${BLUE}Source updated from $SRC_VERSION to Version 8.33.6-1.${NORMAL}"
+					echo "* ${BLUE}Source updated from $SRC_VERSION to Version 8.33.6-0+c0.sidux.1.${NORMAL}"
 				;;
 				8.31*) 
 					pushd /usr/src >/dev/null
@@ -186,17 +187,19 @@ patch_src() {
 					pushd /usr/src/modules/fglrx >/dev/null
 					DEBFULLNAME="Andreas Weber" \
 					DEBEMAIL="andreas@it-weber.com" \
-					dch -b --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
+					dch -b --newversion="8.33.6-0+c0.sidux.1" "Non-maintainer upload."
+					dch "Source updated to Version 8.33.6-0+c0.sidux.1 and patched for 2.6.20."
 					patch </usr/share/sidux-binary-gfx/firegl_public.8.33.6.patch 1>> $LOG 2>> $LOG 
 					popd >/dev/null
-					echo "* ${BLUE}Source updated from $SRC_VERSION to Version 8.33.6-1.${NORMAL}"
+					echo "* ${BLUE}Source updated from $SRC_VERSION to Version 8.33.6-0+c0.sidux.1.${NORMAL}"
 				;;
 				8.33*) 
 					pushd /usr/src/modules/fglrx >/dev/null
 					patch -p1 </usr/share/sidux-binary-gfx/firegl_public.8.33.6.patch 1>> $LOG 2>> $LOG
 					DEBFULLNAME="Andreas Weber" \
 					DEBEMAIL="andreas@it-weber.com" \
-					dch -b --newversion=8.33.6-1 "Source updated to Version 8.33.6-1 and patched for 2.6.20"
+					dch -b --newversion="8.33.6-0+c0.sidux.1" "Non-maintainer upload."
+					dch "Source updated to Version 8.33.6-0+c0.sidux.1 and patched for 2.6.20."
 					popd >/dev/null
 					echo "* ${BLUE}Applying Patch for fglrx $SRC_VERSION done.${NORMAL}"
 				;;
