@@ -449,7 +449,7 @@ help_me()
 	echo " -a | --auto		Automatic mode" >&2
 	echo " -b | --build 		MOD Build only (nvidia|nvidia-legacy|fglrx)" >&2
 	echo " -d | --detect		Detect Card only" >&2
-	echo " -e | --experimental	Use Experimental" >&2
+	#echo " -e | --experimental	Use Experimental" >&2
 	echo " -u | --update		Update Script" >&2
 	echo " -v | --verbose		Verbose" >&2
 	echo " --aiglx		Activate AIGLX" >&2
@@ -457,8 +457,8 @@ help_me()
 	echo "${BLUE}Examples:${NORMAL}"
 	echo "${MAGENTA}install-binary-gfx -a${NORMAL} (This will detect you Card and install the sid Drivers automatically.)"
 	echo "${MAGENTA}install-binary-gfx -a --aiglx${NORMAL} (This will detect you Card and install the sid Drivers automatically and activate AIGLX.)"
-	echo "${MAGENTA}install-binary-gfx -e${NORMAL} (This will detect you Card and install the ${RED}experimental${NORMAL} Drivers automatically.)"
-	echo "${MAGENTA}install-binary-gfx -v -e${NORMAL} (This will detect you Card and install the ${RED}experimental${NORMAL} Drivers automatically in debug mode)"
+	#echo "${MAGENTA}install-binary-gfx -e${NORMAL} (This will detect you Card and install the ${RED}experimental${NORMAL} Drivers automatically.)"
+	#echo "${MAGENTA}install-binary-gfx -v -e${NORMAL} (This will detect you Card and install the ${RED}experimental${NORMAL} Drivers automatically in debug mode)"
 	echo "${MAGENTA}install-binary-gfx -b nvidia${NORMAL} (This will just build the nvidia-module....deb in /usr/src. The same works with fglrx and nvidia-legacy.)"
 	echo "${MAGENTA}install-binary-gfx -d${NORMAL} (This will detect your Card and just print out the Information.)"
 	echo "${MAGENTA}install-binary-gfx --aiglx${NORMAL} (This will activate AIGLX.)"
@@ -696,6 +696,7 @@ while true; do
 	shift
 done
 
+EXPERIMENTAL=1
 
 if [ "$ibg_detect" = 1 ]; then
 	detect_card
@@ -704,16 +705,6 @@ fi
 
 if [ "$EXPERIMENTAL" = 1 ]; then
 	[ "$NETWORK" = 0 ] && error 236
-	echo "${RED}Using Experimantal Source"
-	echo "Its not recommended to use the experimental source."
-	echo "There is no support from the sidux Team for that Function.${NORMAL}"
-	echo ""
-	echo "${CYAN}Are you sure you want to use experimental? (yes/no)${NORMAL}"
-	read answer 
-	if [ ! "$answer" = "yes" ]; then
-		exit 0
-	fi
-	echo ""
 	main
 fi
 
