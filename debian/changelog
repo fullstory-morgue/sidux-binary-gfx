@@ -1,11 +1,7 @@
-sidux-binary-gfx (1.0.14) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.14) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * Using Experimental source as default because of very old source in debian
-SID.
+    sid.
 
  -- Andreas Weber <andreas@it-weber.com>  Sun, 11 Mar 2007 18:20:22 +0100
 
