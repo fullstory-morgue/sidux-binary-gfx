@@ -1,3 +1,9 @@
+sidux-binary-gfx (1.0.15) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Sun, 11 Mar 2007 19:17:43 +0100
+
 sidux-binary-gfx (1.0.14) unstable; urgency=low
 
   * Using Experimental source as default because of very old source in debian
