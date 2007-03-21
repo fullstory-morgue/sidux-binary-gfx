@@ -15,6 +15,7 @@
 #	01.02.2007 AIGLX Support added
 #	01.02.2007 Beryl Support added
 #	01.02.2007 apt-get install fixed.
+#	21.03.2007 beryl Support added
 #
 
 error() 
@@ -705,7 +706,6 @@ fi
 
 if [ "$EXPERIMENTAL" = 1 ]; then
 	[ "$NETWORK" = 0 ] && error 236
-	main
 fi
 
 if [ "$ibg_build" = 1 ]; then
@@ -741,25 +741,56 @@ fi
 
 if [ "$BERYL" = 1 ]; then
 	[ "$KMOD" = "none" ] && detect_card
-	if [[ "$LOG" ]]; then
-		create_log
+	if [ "$KMOD" =  "nvidia" ] || [ "$KMOD" =  "fglrx" ]; then
+		if [[ "$LOG" ]]; then
+			create_log
+		fi
+		echo "* ${BLUE}Installing beryl.${NORMAL}"
+		APTSRC="deb http://download.tuxfamily.org/myberyl/shame/debian-sid/beryl-svn/relatively-stable/ ./"
+		PACKAGES="beryl-shame"
+		BERYLSRC=1
+		grep myberyl /etc/apt/sources.list 1> /dev/null 2> /dev/null || BERYLSRC=0 
+		if [ "$BERYLSRC" = 0 ]; then
+			echo "" >> /etc/apt/sources.list
+			echo "#Beryl" >> /etc/apt/sources.list
+			echo "$APTSRC" >> /etc/apt/sources.list
+			wget http://download.tuxfamily.org/myberyl/shame/A42A6CF5.gpg -O- | sudo apt-key add -
+			apt-get update 1> /dev/null 2> /dev/null || error 245
+		fi
+		apt-get -y install $PACKAGES 1> /dev/null 2> /dev/null || error 234
+		echo "* ${GREEN}Beryl installed succesfully${NORMAL}"
+		#echo "* ${BLUE}Upgrading beryl-shame.${NORMAL}"
+		#beryl-shame upgrade 1> /dev/null 2> /dev/null
+		echo "* ${BLUE}Enable Composite.${NORMAL}"
+		if [ $KMOD = "nvidia" ]; then
+			nvidia-xconfig -t | grep 'Option "AllowGLXWithComposite" "true"' > /dev/null || nvidia-xconfig --allow-glx-with-composite -s
+			#nvidia-xconfig -t | grep 'Option "AddARGBGLXVisuals" "True"' > /dev/null ?? Do we need that?
+			COMPTEST=1
+			grep '"Composite"' /etc/X11/xorg.conf > /dev/null || COMPTEST=0
+			if [ "$COMPTEST" = "0" ]; then
+				echo '' >> /etc/X11/xorg.conf
+				echo '#Composite' >> /etc/X11/xorg.conf
+				echo 'Section "Extensions"' >> /etc/X11/xorg.conf
+				echo '	Option         "Composite" "on"' >> /etc/X11/xorg.conf
+				echo 'EndSection' >> /etc/X11/xorg.conf
+			fi
+		fi
+		if [ $KMOD = "fglrx" ]; then
+			#Option "XAANoOffscreenPixmaps" 
+			#Option "AddARGBGLXVisuals" "On"
+			COMPTEST=1
+			grep '"Composite"' /etc/X11/xorg.conf > /dev/null || COMPTEST=0
+			if [ "$COMPTEST" = "0" ]; then
+				echo '' >> /etc/X11/xorg.conf
+				echo '#Composite' >> /etc/X11/xorg.conf
+				echo 'Section "Extensions"' >> /etc/X11/xorg.conf
+				echo '	Option         "Composite" "on"' >> /etc/X11/xorg.conf
+				echo 'EndSection' >> /etc/X11/xorg.conf
+			fi
+		fi
+	else
+		echo "* ${RED}No supported Card for beryl. Sorry.${NORMAL}"
 	fi
-	echo "* ${BLUE}Installing beryl.${NORMAL}"
-	APTSRC="deb http://download.tuxfamily.org/myberyl/shame/debian-sid/beryl-svn/relatively-stable/ ./"
-	PACKAGES="beryl compiz beryl-shame beryl-plugins-shame beryl-manager emerald emerald-themes aquamarine"
-	BERYLSRC=1
-	grep myberyl /etc/apt/sources.list 1> /dev/null 2> /dev/null || BERYLSRC=0 
-	if [ "$BERYLSRC" = 0 ]; then
-		echo "" >> /etc/apt/sources.list
-		echo "#Beryl" >> /etc/apt/sources.list
-		echo "$APTSRC" >> /etc/apt/sources.list
-		wget http://download.tuxfamily.org/myberyl/shame/A42A6CF5.gpg -O- | sudo apt-key add -
-		apt-get update 1> /dev/null 2> /dev/null || error 245
-	fi
-	apt-get -y install $PACKAGES 1> /dev/null 2> /dev/null || error 234
-	echo "* ${GREEN}Beryl installed succesfully${NORMAL}"
-	echo "* ${BLUE}Upgrading beryl-shame.${NORMAL}"
-	beryl-shame upgrade 1> /dev/null 2> /dev/null
 fi
 
 end_me

@@ -1,8 +1,12 @@
 sidux-binary-gfx (1.0.15) UNRELEASED; urgency=low
 
+  [ Stefan Lippers-Hollmann ]
   * NOT RELEASED YET
 
- -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Sun, 11 Mar 2007 19:17:43 +0100
+  [ Andreas Weber ]
+  * beryl supported extended. 
+
+ -- Andreas Weber <andreas@it-weber.com>  Wed, 21 Mar 2007 16:03:32 +0100
 
 sidux-binary-gfx (1.0.14) unstable; urgency=low
 
