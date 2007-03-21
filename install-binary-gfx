@@ -15,7 +15,7 @@
 #	01.02.2007 AIGLX Support added
 #	01.02.2007 Beryl Support added
 #	01.02.2007 apt-get install fixed.
-#	21.03.2007 beryl Support added
+#	21.03.2007 beryl Support extended
 #
 
 error() 
