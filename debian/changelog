@@ -4,9 +4,10 @@ sidux-binary-gfx (1.0.15) UNRELEASED; urgency=low
   * NOT RELEASED YET
 
   [ Andreas Weber ]
-  * beryl supported extended. 
+  * beryl supported extended.
+  * xorg.conf parser improved. 
 
- -- Andreas Weber <andreas@it-weber.com>  Wed, 21 Mar 2007 16:03:32 +0100
+ -- Andreas Weber <andreas@it-weber.com>  Mon, 26 Mar 2007 10:45:20 +0200
 
 sidux-binary-gfx (1.0.14) unstable; urgency=low
 

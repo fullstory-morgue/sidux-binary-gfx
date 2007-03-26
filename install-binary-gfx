@@ -360,11 +360,11 @@ sources_backup() {
 	# Backup sources.list and create the temporary config with contrib and non-free repos
 	cp /etc/apt/sources.list /etc/apt/sources.backup
 	if [ "$EXPERIMENTAL" = 1 ]; then
-		echo "deb http://ftp.debian.org/debian/ sid main contrib non-free" > "/etc/apt/sources.list" 
-		echo "deb http://ftp.debian.org/debian experimental main contrib non-free" >> "/etc/apt/sources.list" 
+		echo "deb http://ftp.nl.debian.org/debian/ sid main contrib non-free" > "/etc/apt/sources.list" 
+		echo "deb http://ftp.nl.debian.org/debian experimental main contrib non-free" >> "/etc/apt/sources.list" 
 		echo "deb http://sidux.com/debian/ sid main fix.main contrib non-free" >> "/etc/apt/sources.list"
 	else
-		echo "deb http://ftp.debian.org/debian/ sid main contrib non-free" > "/etc/apt/sources.list" 
+		echo "deb http://ftp.nl.debian.org/debian/ sid main contrib non-free" > "/etc/apt/sources.list" 
 		echo "deb http://sidux.com/debian/ sid main fix.main contrib non-free" >> "/etc/apt/sources.list"
 	fi
 	echo "* ${BLUE}Running apt-get update.${NORMAL}"
@@ -759,12 +759,15 @@ if [ "$BERYL" = 1 ]; then
 		fi
 		apt-get -y install $PACKAGES 1> /dev/null 2> /dev/null || error 234
 		echo "* ${GREEN}Beryl installed succesfully${NORMAL}"
-		#echo "* ${BLUE}Upgrading beryl-shame.${NORMAL}"
-		#beryl-shame upgrade 1> /dev/null 2> /dev/null
+		cp /etc/X11/xorg.conf /etc/X11/xorg.beryl
 		echo "* ${BLUE}Enable Composite.${NORMAL}"
 		if [ $KMOD = "nvidia" ]; then
 			nvidia-xconfig -t | grep 'Option "AllowGLXWithComposite" "true"' > /dev/null || nvidia-xconfig --allow-glx-with-composite -s
-			#nvidia-xconfig -t | grep 'Option "AddARGBGLXVisuals" "True"' > /dev/null ?? Do we need that?
+			nvidia-xconfig -t | grep 'Option "RenderAccel" "true"' > /dev/null || nvidia-xconfig --render-accel -s
+			cp /etc/X11/xorg.conf /tmp/xorg.tmp
+			nvidia-xconfig -t | grep 'Option "XAANoOffscreenPixmaps" "True"' > /dev/null || sed '/DefaultDepth/a Option          "XAANoOffscreenPixmaps"          "True"' /tmp/xorg.tmp>/etc/X11/xorg.conf
+			cp /etc/X11/xorg.conf /tmp/xorg.tmp
+			nvidia-xconfig -t | grep 'Option "AddARGBGLXVisuals" "True"' > /dev/null || sed '/DefaultDepth/a Option          "AddARGBGLXVisuals"          "True"' /tmp/xorg.tmp>/etc/X11/xorg.conf
 			COMPTEST=1
 			grep '"Composite"' /etc/X11/xorg.conf > /dev/null || COMPTEST=0
 			if [ "$COMPTEST" = "0" ]; then
@@ -776,8 +779,10 @@ if [ "$BERYL" = 1 ]; then
 			fi
 		fi
 		if [ $KMOD = "fglrx" ]; then
-			#Option "XAANoOffscreenPixmaps" 
-			#Option "AddARGBGLXVisuals" "On"
+			cp /etc/X11/xorg.conf /tmp/xorg.tmp
+			nvidia-xconfig -t | grep 'Option "XAANoOffscreenPixmaps" "True"' > /dev/null || sed '/DefaultDepth/a Option          "XAANoOffscreenPixmaps"          "True"' /tmp/xorg.tmp>/etc/X11/xorg.conf
+			cp /etc/X11/xorg.conf /tmp/xorg.tmp
+			nvidia-xconfig -t | grep 'Option "AddARGBGLXVisuals" "True"' > /dev/null || sed '/DefaultDepth/a Option          "AddARGBGLXVisuals"          "True"' /tmp/xorg.tmp>/etc/X11/xorg.conf
 			COMPTEST=1
 			grep '"Composite"' /etc/X11/xorg.conf > /dev/null || COMPTEST=0
 			if [ "$COMPTEST" = "0" ]; then
