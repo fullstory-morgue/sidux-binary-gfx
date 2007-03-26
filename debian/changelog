@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.15) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.15) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * beryl supported extended.
   * xorg.conf parser improved. 
 
