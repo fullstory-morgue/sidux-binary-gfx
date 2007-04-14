@@ -613,7 +613,7 @@ CYAN="[1;36m"
 # BOLD WHITE: Hint
 WHITE="[1;37m"
 
-echo "${BLUE}Script to install binary Drivers for NVIDIA/ATI Grafik Cards${NORMAL}"
+echo "${BLUE}Script to install binary drivers for NVIDIA/ATI Graphics Cards${NORMAL}"
 echo ""
 
 if [ "$FLL_DISTRO_MODE" = "live" ]; then

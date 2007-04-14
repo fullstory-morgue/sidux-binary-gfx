@@ -1,8 +1,12 @@
 sidux-binary-gfx (1.0.16) UNRELEASED; urgency=low
 
+  [ Stefan Lippers-Hollmann ]
   * NOT RELEASED YET
 
- -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Mon, 26 Mar 2007 12:32:51 +0200
+  [ Bernard Gray ]
+  * user reported spelling error 
+
+ -- Bernard Gray <bernard.gray@gmail.com>  Sat, 14 Apr 2007 23:43:58 +1000
 
 sidux-binary-gfx (1.0.15) unstable; urgency=low
 
