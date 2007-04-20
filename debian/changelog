@@ -4,9 +4,13 @@ sidux-binary-gfx (1.0.16) UNRELEASED; urgency=low
   * NOT RELEASED YET
 
   [ Bernard Gray ]
-  * user reported spelling error 
+  * user reported spelling error
 
- -- Bernard Gray <bernard.gray@gmail.com>  Sat, 14 Apr 2007 23:43:58 +1000
+  [ Andreas Weber ]
+  * Changelog and timeformat fixed
+   
+
+ -- Andreas Weber <andreas@it-weber.com>  Fri, 20 Apr 2007 21:05:16 +0200
 
 sidux-binary-gfx (1.0.15) unstable; urgency=low
 

@@ -2,20 +2,8 @@
 # Author: Andreas Weber <andreas@it-weber.com>
 # Date: 16.12.2006
 # Purpose: Script to install binary nvidia/ati drivers for sidux
-#
-# Changes:
-# 	16.12.2006 Initial Version by Andreas Weber 0.1 alpha
-#	01.01.2007 Update diabled.
-#	01.01.2007 nvidia-legacy driver added
-#	01.01.2007 fix for config.h removed. Not needed anymore.
-#	08.01.2007 apt-get update added to make sure we can install the required sources
-#	21.01.2007 m-a update added
-#	22.01.2007 nvidia-glx and nvidia-common added as m-a isn't installing that Packages automatically 
-#	24.01.2007 nvidia-xconfig added to change the xorg automatically
-#	01.02.2007 AIGLX Support added
-#	01.02.2007 Beryl Support added
-#	01.02.2007 apt-get install fixed.
-#	21.03.2007 beryl Support extended
+# License: BSD, see /usr/share/common-licenses/BSD
+# Changelog: debian/changelog
 #
 
 error() 
@@ -308,7 +296,7 @@ write_xorg()
 	# We are creating a Backup by using date and time for the 
 	# Filename. Just in case the User will run the Script several
 	# Times he will still be able to restore any of the Backups.
-	EXTENSION=$(date +%d%m%y-%H%M)
+	EXTENSION=$(date +%d%m%yt%H%M)
 	XORGCFG="/etc/X11/xorg.conf"
 	XORGBKP="/etc/X11/xorg.$EXTENSION"
 	# Creating the Backup
@@ -569,7 +557,7 @@ KMOD="none"
 ARCH=$(uname -m)
 KERNEL=$(uname -r)
 SLH_KERNEL="FALSE"
-DATE=$(date +%D\ %T)
+DATE=$(date +%D\t%T)
 ME=$(basename $0)
 BUILDONLY="FALSE"
 DATABASE="/usr/share/sidux-binary-gfx/detect_nvcard"
