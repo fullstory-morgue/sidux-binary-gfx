@@ -9,8 +9,9 @@ sidux-binary-gfx (1.0.16) UNRELEASED; urgency=low
   [ Andreas Weber ]
   * Changelog and timeformat fixed
   * dch output redirected.
+  * beryl disabled for fglrx 
 
- -- Andreas Weber <andreas@it-weber.com>  Fri, 20 Apr 2007 21:24:01 +0200
+ -- Andreas Weber <andreas@it-weber.com>  Fri, 20 Apr 2007 21:34:04 +0200
 
 sidux-binary-gfx (1.0.15) unstable; urgency=low
 

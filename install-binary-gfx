@@ -729,7 +729,7 @@ fi
 
 if [ "$BERYL" = 1 ]; then
 	[ "$KMOD" = "none" ] && detect_card
-	if [ "$KMOD" =  "nvidia" ] || [ "$KMOD" =  "fglrx" ]; then
+	if [ "$KMOD" =  "nvidia" ]; then
 		if [[ "$LOG" ]]; then
 			create_log
 		fi
