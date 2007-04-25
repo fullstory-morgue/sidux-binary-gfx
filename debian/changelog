@@ -1,5 +1,6 @@
 sidux-binary-gfx (1.0.17) UNRELEASED; urgency=low
 
+  DO NOT RELEASE THIS PACKAGE UNTIL I REMOVE THAT LINE!!!
   [ Stefan Lippers-Hollmann ]
   * NOT RELEASED YET
 
@@ -8,7 +9,7 @@ sidux-binary-gfx (1.0.17) UNRELEASED; urgency=low
   * experimental removed
   * beryl changed to compiz
 
- -- Andreas Weber <andreas@it-weber.com>  Wed, 25 Apr 2007 12:42:22 +0200
+ -- Andreas Weber <andreas@it-weber.com>  Wed, 25 Apr 2007 12:52:32 +0200
 
 sidux-binary-gfx (1.0.16) unstable; urgency=low
 
