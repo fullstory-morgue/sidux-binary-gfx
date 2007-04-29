@@ -1,10 +1,5 @@
-sidux-binary-gfx (1.0.17) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.17) unstable; urgency=low
 
-  DO NOT RELEASE THIS PACKAGE UNTIL I REMOVE THAT LINE!!!
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * fglrx temporary changed to non-debian way until source is upgraded
   * experimental removed
   * beryl changed to compiz
