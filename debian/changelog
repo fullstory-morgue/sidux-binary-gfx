@@ -1,3 +1,9 @@
+sidux-binary-gfx (1.0.18) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Sun, 29 Apr 2007 20:40:23 +0200
+
 sidux-binary-gfx (1.0.17) unstable; urgency=low
 
   * fglrx temporary changed to non-debian way until source is upgraded
