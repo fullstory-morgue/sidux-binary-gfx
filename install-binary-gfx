@@ -433,16 +433,6 @@ FLL_IMAGE_DIR="SIDUX"
 FLL_DISTRO_MODE="installed"
 [ -r /etc/default/distro ] && . /etc/default/distro
 
-if [ "$FLL_DISTRO_MODE" = "live" ]; then
-	if grep -q unionfs /proc/mounts; then
-		echo "${BLUE}Unionfs found${NORMAL}."
-	else
-		echo "${BLUE}Activating Unionfs now.${NORMAL}"
-		mkdir -p /tmp/union
-		mount -t unionfs -o dirs="/tmp/union/:/$FLL_IMAGE_DIR" /none "/$FLL_IMAGE_DIR/" 2>&1 >/dev/null
-	fi
-fi
-
 # Initializing basic Variables
 KMOD="none"
 ARCH=$(uname -m)
