@@ -1,3 +1,9 @@
+sidux-binary-gfx (1.0.19) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Wed, 16 May 2007 03:39:28 +0200
+
 sidux-binary-gfx (1.0.18) unstable; urgency=low
 
   * remove obsolete unionfs functionality, while using aufs it does more harm
