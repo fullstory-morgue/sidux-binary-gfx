@@ -1,6 +1,5 @@
-sidux-binary-gfx (1.0.18) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.18) unstable; urgency=low
 
-  * NOT RELEASED YET
   * remove obsolete unionfs functionality, while using aufs it does more harm
     than anything else.
 
