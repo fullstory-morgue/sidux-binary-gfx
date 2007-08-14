@@ -1,3 +1,9 @@
+sidux-binary-gfx (1.0.20) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Tue, 14 Aug 2007 18:41:24 +0200
+
 sidux-binary-gfx (1.0.19) unstable; urgency=low
 
   * If no Parameter is given help will be printed. 
