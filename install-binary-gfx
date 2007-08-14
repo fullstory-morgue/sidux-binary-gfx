@@ -512,6 +512,11 @@ trap nuke_me exit
 VERBOSE=0
 UPDATE=0
 
+if [ "$1" = "" ]; then
+	help_me
+	end_me
+fi
+
 ARGS=$(
 	getopt \
 		--name "install-binary-gfx" \
