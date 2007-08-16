@@ -361,10 +361,10 @@ main()
 {
 	[ "$NETWORK" = 0 ] && error 236
 	[ "$KMOD" = "none" ] && detect_card
-	if [ $KMOD = "fglrx" ]; then
-		echo "${RED}fglrx driver is currently broken. Sorry.${NORMAL}"
-		exit 0
-	fi
+	#if [ $KMOD = "fglrx" ]; then
+	#	echo "${RED}fglrx driver is currently broken. Sorry.${NORMAL}"
+	#	exit 0
+	#fi
 	sources_backup
 	dpkg -l | grep sidux-binary-gfx 1>> /dev/null 2>> /dev/null || install_me 
 	
