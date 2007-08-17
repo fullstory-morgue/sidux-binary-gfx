@@ -1,3 +1,9 @@
+sidux-binary-gfx (1.0.21) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Fri, 17 Aug 2007 14:09:28 +0200
+
 sidux-binary-gfx (1.0.20) unstable; urgency=low
 
   * fglrx Module activated. 
