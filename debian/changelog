@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.20) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.20) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * fglrx Module activated. 
 
  -- Andreas Weber <webera@srv-1>  Thu, 16 Aug 2007 22:23:09 +0200
