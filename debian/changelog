@@ -2,8 +2,9 @@ sidux-binary-gfx (1.0.21) UNRELEASED; urgency=low
 
   * NOT RELEASED YET
   * add VCS control headers.
+  * update syntax for Vcs headers in debian/control
 
- -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Tue, 11 Sep 2007 20:22:08 +0200
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Sun, 07 Oct 2007 14:48:09 +0200
 
 sidux-binary-gfx (1.0.20) unstable; urgency=low
 
