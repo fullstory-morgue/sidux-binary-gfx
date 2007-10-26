@@ -219,9 +219,9 @@ write_xorg()
 	# We are creating a Backup by using date and time for the 
 	# Filename. Just in case the User will run the Script several
 	# Times he will still be able to restore any of the Backups.
-	EXTENSION=$(date +%d%m%yt%H%M)
+	EXTENSION=$(date -u +%Y%m%d%H%M)
 	XORGCFG="/etc/X11/xorg.conf"
-	XORGBKP="/etc/X11/xorg.$EXTENSION"
+	XORGBKP="/etc/X11/xorg.conf.$EXTENSION"
 	# Creating the Backup
 	cp $XORGCFG $XORGBKP
 	echo "* ${BLUE}Original $XORGCFG saved as $XORGBKP.${NORMAL}"
