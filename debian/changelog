@@ -1,12 +1,10 @@
-sidux-binary-gfx (1.0.21) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.21) unstable; urgency=low
 
   [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
   * add VCS control headers.
   * update syntax for Vcs headers in debian/control
 
   [ Fabian Wuertz ]
-  * NOT RELEASED YET
   * new naming for the x.org backupfile in accord with siduxcc and change-res
 
  -- Fabian Wuertz <xadras@sidux.com>  Sat, 27 Oct 2007 01:36:16 +0200
