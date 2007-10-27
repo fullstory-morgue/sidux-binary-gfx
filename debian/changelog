@@ -1,7 +1,6 @@
-sidux-binary-gfx (1.0.22) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.22) unstable; urgency=low
 
   [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
   * fix mail addresses inside this changelog.
 
   [ webera ]
