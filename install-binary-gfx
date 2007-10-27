@@ -6,6 +6,39 @@
 # Changelog: debian/changelog
 #
 
+print_header()
+{
+	echo "${YELLOW}--------------------------${NORMAL}"	
+	echo "${YELLOW}$1${NORMAL}"
+	echo "${YELLOW}--------------------------${NORMAL}"
+	echo ""
+}
+
+print_normal()
+{
+	echo "${BLUE}$1${NORMAL}"
+}
+
+print_title()
+{
+	echo "${YELLOW}[ $1 ]${NORMAL}"
+}
+
+print_status()
+{
+	echo " ${WHITE}* ${BLUE}$1${NORMAL}"
+}
+
+print_sum()
+{
+	echo "${YELLOW}$1 ${WHITE}$2${NORMAL}"
+}
+
+print_error()
+{
+	echo "${RED}! ERROR: ($1)${NORMAL} ${BLUE}$2${NORMAL}"
+}
+
 error() 
 {
 	# This Funktion is printing out all Error Messages. 
@@ -40,13 +73,13 @@ error()
 		230) ERR_D="Wrong md5 sum for $ATISRC !";;
 		*) ERR_D="Unexpected Error !";;
 	esac
-	echo "${RED}! ERROR: ($ERR_C) $ERR_D${NORMAL}"
-	echo "Check $LOG for details."
+	print_error "$ERR_C" "$ERR_D"
 	if [ ! -z $LOG ]; then # If we get an error before Log is created we just give it out to stdout.
+		print_normal "Check $LOG for details."
 		echo "$DATE ERROR: ($ERR_C) $ERR_D" >> $LOG
 	fi
-	echo ""
-	echo "* ${BLUE}Cleaning up. Please wait.${NORMAL}"
+	print_normal ""
+	print_status "Cleaning up. Please wait."
 	# If we are in verbose Mode print out the Log File.
 	[ $VERBOSE = 1 ] && cat $LOG
 	exit $ERR_C
@@ -99,8 +132,8 @@ prep()
 	if [ $SLH_KERNEL = "TRUE" ]; then
 		# If Headers are already installed we are fine to run m-a prepare
 		if [ -d /usr/src/linux-headers-$KERNEL ]; then
-			echo "* ${BLUE}Kernel Headers found.${NORMAL}"
-			echo "* ${BLUE}Running module-assistant prepare.${NORMAL}"
+			print_status "Kernel Headers found."
+			print_status "Running module-assistant prepare."
 			apt-get -y --purge remove nvidia-kernel-source 1>> $LOG 2>> $LOG
 			m-a update 1>> $LOG 2>> $LOG || error 244
 			install_source
@@ -146,7 +179,7 @@ patch_src() {
 build() {
 	# We will create the Package now by using m-a. If the build fails we get the 
 	# Exitcode 250. 
-	echo "* ${BLUE}Building ${MAGENTA}$KMOD ${BLUE}Module.${NORMAL}"
+	print_status "Building ${MAGENTA}$KMOD ${BLUE}Module."
 	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
 		ln -s /usr/src/linux/include/linux/autoconf.h /usr/src/linux/include/linux/config.h 1>> $LOG 2>> $LOG
 	fi
@@ -164,12 +197,12 @@ build() {
 		fi
 	fi
 	
-	echo "* ${BLUE}Cleaning up old deb's.${NORMAL}"
+	print_status "Cleaning up old deb's."
 	# We are cleaning /usr/src from old nvidia debs. Otherwise the ls command for $DEB will create a List
 	rm -f /usr/src/$KMOD*$KERNEL*.deb 1>> $LOG 2>> $LOG
 	# Building the Module
 	m-a a-b -Oi $KMOD 1>> $LOG 2>> $LOG || error 250
-	echo "* ${MAGENTA}$KMOD ${GREEN}build successfull.${NORMAL}"
+	print_status "${MAGENTA}$KMOD ${GREEN}build successfull."
 }
 
 install_deb() 
@@ -184,7 +217,7 @@ install_deb()
 	fi
 	# Go back to the Path we were comming.
 	cd $OLDPATH
-	echo "* ${BLUE}Installing $DEB${NORMAL}"
+	print_status "Installing $DEB"
 	# Install the deb.
 	dpkg -i --no-debsig /usr/src/$DEB 1>> $LOG 2>> $LOG
 	if [ ! "$?" = "0" ]; then
@@ -224,13 +257,13 @@ write_xorg()
 	XORGBKP="/etc/X11/xorg.conf.$EXTENSION"
 	# Creating the Backup
 	cp $XORGCFG $XORGBKP
-	echo "* ${BLUE}Original $XORGCFG saved as $XORGBKP.${NORMAL}"
+	print_status "Original $XORGCFG saved as $XORGBKP."
 	
 	# Changing entry's for nvidia using Perl oneliners.
 	if [ $KMOD = "nvidia" ]; then
 		# The Perl oneliners are just a Fallback in case nvidia-xconfig will fail to install
 		apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
-		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
+		print_status "Running nvidia-xconfig to configure your xorg."
 		nvidia-xconfig -o /etc/X11/xorg.conf -s 1>> $LOG 2>> $LOG
 	fi
 	
@@ -238,7 +271,7 @@ write_xorg()
 	if [ $KMOD = "nvidia-kernel-legacy" ]; then
 		# The Perl oneliners are just a Fallback in case nvidia-xconfig will fail to install
 		apt-get -fy install nvidia-xconfig nvidia-settings 1>> $LOG 2>> $LOG || error 241
-		echo "* ${BLUE}Running nvidia-xconfig to configure your xorg.${NORMAL}"
+		print_status "Running nvidia-xconfig to configure your xorg."
                 nvidia-xconfig -o /etc/X11/xorg.conf -s 1>> $LOG 2>> $LOG
 	fi
 
@@ -247,7 +280,7 @@ write_xorg()
 		# The Perl oneliners are just a Fallback in case aticonfig will fail
 		#apt-get -fy install fglrx-driver fglrx-control 1>> $LOG 2>> $LOG || error 241
 		apt-get -fy install fglrx-control 1>> $LOG 2>> $LOG || error 241
-		echo "* ${BLUE}Running aticonfig to configure your xorg.${NORMAL}"
+		print_status "Running aticonfig to configure your xorg."
 		aticonfig --initial --input=/etc/X11/xorg.conf --output=/etc/X11/xorg.conf 1>> $LOG 2>> $LOG
 	fi
 }
@@ -257,7 +290,7 @@ sources_backup() {
 	cp /etc/apt/sources.list /etc/apt/sources.backup
 	echo "deb http://ftp.nl.debian.org/debian/ sid main contrib non-free" > "/etc/apt/sources.list" 
 	echo "deb http://sidux.com/debian/ sid main fix.main contrib non-free" >> "/etc/apt/sources.list"
-	echo "* ${BLUE}Running apt-get update.${NORMAL}"
+	print_status "Running apt-get update."
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
@@ -269,15 +302,15 @@ sources_restore()
 
 clean_up() 
 {
-	[ "$NETWORK" = 0 ] && error 236
+	[ ! "$NETWORK" = 0 ] && error 236
 	# Run apt-get update to avoid apt error messages
-	echo "* ${BLUE}Cleaning up. Please wait.${NORMAL}"
+	print_status "Cleaning up. Please wait."
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
 install_me() 
 {
-	[ "$NETWORK" = 0 ] && error 236
+	[ ! "$NETWORK" = 0 ] && error 236
 	# If someone tries to run this Script without installing the Package, we try to install it
 	apt-get install sidux-binary-gfx 1>> /dev/null 2>> /dev/null || exit 1
 	/usr/sbin/install-binary-gfx || exit 1
@@ -289,7 +322,7 @@ nuke_me()
 	# If someone is pressing STRG+C we restore backed up sources.list before we left
 	[ -f /etc/apt/sources.backup ] && cp /etc/apt/sources.backup /etc/apt/sources.list
 	rm -f /etc/apt/sources.backup 1>> /dev/null 2>> /dev/null 
-	[ "NETWORK" = 1 ] && apt-get update 2>&1 /dev/null
+	[ "NETWORK" = 0 ] && apt-get update 2>&1 /dev/null
 }
 
 detect_card() 
@@ -297,28 +330,28 @@ detect_card()
 	# Try to identify which kind of GFX Board we have
 	lspci | grep nVidia > /dev/null && KMOD="nvidia"
 	lspci | grep ATI > /dev/null && KMOD="fglrx"
-	echo "* ${BLUE}Detecting GFX Cards${NORMAL}"
+	print_status "Detecting GFX Cards"
 	# That option will show User the Card which will be detected by this Script
 	if [ "$KMOD" = "fglrx" ]; then
-		echo "* ${BLUE}ATI Card found.${NORMAL}"
+		print_status "ATI Card found."
 		if [ -r /usr/share/sidux-binary-gfx/detect_aticard ]; then
-			echo ""
+			print_normal ""
 			. /usr/share/sidux-binary-gfx/detect_aticard
-			echo ""
+			print_normal ""
 		else
-			echo "/usr/share/sidux-binary-gfx/detect_aticard not found."
-			echo "Please check Installation of sidux-binary-gfx."
+			print_normal "/usr/share/sidux-binary-gfx/detect_aticard not found."
+			print_normal "Please check Installation of sidux-binary-gfx."
 			exit 1
 		fi
 	else
-		echo "* ${BLUE}NVIDIA Card found.${NORMAL}"
+		print_status "NVIDIA Card found."
 		if [ -r /usr/share/sidux-binary-gfx/detect_nvcard ]; then
-			echo ""
+			print_normal ""
 			. /usr/share/sidux-binary-gfx/detect_nvcard
-			echo ""
+			print_normal ""
 		else
-			echo "/usr/share/sidux-binary-gfx/detect_nvcard not found."
-			echo "Please check Installation of sidux-binary-gfx."
+			print_normal "/usr/share/sidux-binary-gfx/detect_nvcard not found."
+			print_normal "Please check Installation of sidux-binary-gfx."
 			exit 1
 		fi
 	fi
@@ -329,42 +362,43 @@ check_live()
 	# This will check if we are in livemode and run restartx automatically
 	if [ "$FLL_DISTRO_MODE" = "live" ]; then
 		#restartx &
-		echo "${RED}Restarting X is currently not working. It will restart your Computer. Sorry.${NORMAL}"
-		echo ""
+		print_normal "${RED}Restarting X is currently not working. It will restart your Computer. Sorry.${NORMAL}"
+		print_normal ""
 	fi
 }
 
 help_me() 
 {
-	echo "${BLUE}Usage:${NORMAL} $0 [options] " >&2
-	echo " -a | --auto		Automatic mode" >&2
-	echo " -b | --build 		MOD Build only (nvidia|nvidia-legacy|fglrx)" >&2
-	echo " -d | --detect		Detect Card only" >&2
-	echo " -u | --update		Update Script" >&2
-	echo " -v | --verbose		Verbose" >&2
-	echo " --aiglx		Activate AIGLX" >&2
-	echo ""
-	echo "${BLUE}Examples:${NORMAL}"
-	echo "${MAGENTA}install-binary-gfx -a${NORMAL} (This will detect you Card and install the sid Drivers automatically.)"
-	echo "${MAGENTA}install-binary-gfx -b nvidia${NORMAL} (This will just build the nvidia-module....deb in /usr/src. The same works with fglrx and nvidia-legacy.)"
-	echo "${MAGENTA}install-binary-gfx -d${NORMAL} (This will detect your Card and just print out the Information.)"
-	echo "${MAGENTA}install-binary-gfx -u${NORMAL} (This will update this Script. Please note that will not be done by dist-upgrade as long as you"
-	echo "                       have contrib for the sidux repository activated in your sources.list.)"
-	echo ""
-	echo "${BLUE}Troubleshooting:${NORMAL}"
-	echo "If the Script fails for your Card please run the Script in debug mode and post the output as well as the log file"
-	echo "/var/log/sidux-CARD-installer.log in the Sidux Forum or http://paste.debian.net and contact me (webera) in ${BLUE}#sidux${NORMAL}."
-	echo ""
+	print_normal "${BLUE}Usage:${NORMAL} $0 [options] "
+	print_normal " -a | --auto		Automatic mode"
+	print_normal " -A | --accept		Accept Disclaimer automatically (Please read it once)"
+	print_normal " -b | --build 		MOD Build only (nvidia|nvidia-legacy|fglrx)"
+	print_normal " -d | --detect		Detect Card only"
+	print_normal " -u | --update		Update Script"
+	print_normal " -v | --verbose		Verbose"
+	print_normal " -D | --debug		Debug (same as Verbose)"
+	print_normal ""
+	print_normal "${BLUE}Examples:${NORMAL}"
+	print_normal "${MAGENTA}install-binary-gfx -a${NORMAL} (This will detect you Card and install the sid Drivers automatically.)"
+	print_normal "${MAGENTA}install-binary-gfx -b nvidia${NORMAL} (This will just build the nvidia-module....deb in /usr/src. The same works with fglrx and nvidia-legacy.)"
+	print_normal "${MAGENTA}install-binary-gfx -d${NORMAL} (This will detect your Card and just print out the Information.)"
+	print_normal "${MAGENTA}install-binary-gfx -u${NORMAL} (This will update this Script. Please note that will not be done by dist-upgrade as long as you"
+	print_normal "                       have contrib for the sidux repository activated in your sources.list.)"
+	print_normal ""
+	print_normal "${BLUE}Troubleshooting:${NORMAL}"
+	print_normal "If the Script fails for your Card please run the Script in debug mode and post the output as well as the log file"
+	print_normal "/var/log/sidux-CARD-installer.log in the Sidux Forum or http://paste.debian.net and contact me (webera) in ${BLUE}#sidux${NORMAL}."
+	print_normal ""
 }
 
 main() 
 {
-	[ "$NETWORK" = 0 ] && error 236
+	[ ! "$NETWORK" = 0 ] && error 236
 	[ "$KMOD" = "none" ] && detect_card
-	#if [ $KMOD = "fglrx" ]; then
-	#	echo "${RED}fglrx driver is currently broken. Sorry.${NORMAL}"
-	#	exit 0
-	#fi
+	if [ $KMOD = "fglrx" ]; then
+		print_normal "${RED}fglrx driver is currently broken. Sorry.${NORMAL}"
+		exit 0
+	fi
 	sources_backup
 	dpkg -l | grep sidux-binary-gfx 1>> /dev/null 2>> /dev/null || install_me 
 	
@@ -398,24 +432,24 @@ main()
 end_me()
 {
 	# We are done :)
-	echo ""
-	echo "${GREEN}Script finished.${NORMAL}"
+	print_normal ""
+	print_normal "${GREEN}Script finished.${NORMAL}"
 	exit 0
 }
 
 update_me() 
 {
-	[ "$NETWORK" = 0 ] && error 236
+	[ ! "$NETWORK" = 0 ] && error 236
 	CVERSION=$(apt-cache policy sidux-binary-gfx | grep \* | awk '{print $2}')
-	echo "${BLUE}Updating Script${NORMAL}"
-	echo ""
-	echo "Current Version: ${BLUE}$CVERSION${NORMAL}"
+	print_normal "${BLUE}Updating Script${NORMAL}"
+	print_normal ""
+	print_normal "Current Version: ${BLUE}$CVERSION${NORMAL}"
 	# This will update the Script
 	create_log
 	sources_backup
 	apt-get -y upgrade sidux-scripts sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
 	UVERSION=$(apt-cache policy sidux-binary-gfx | grep \* | awk '{print $2}')
-	echo "Updated to: ${BLUE}$UVERSION${NORMAL}"
+	print_normal "Updated to: ${BLUE}$UVERSION${NORMAL}"
 	sources_restore
 	clean_up
 }
@@ -424,7 +458,7 @@ update_me()
 if [ "$(id -u)" -ne 0 ]; then
 	[ -x /usr/bin/su-me ] && DISPLAY="" exec su-me "$0" "$@"
 
-	echo "${RED}Error: You must be root to run this script!${NORMAL}"
+	print_normal "${RED}Error: You must be root to run this script!${NORMAL}"
 	exit 1
 fi
 
@@ -453,10 +487,9 @@ DEBIAN_FRONTEND="noninteractive"
 DEBIAN_PRIORITY="critical" 
 DEBCONF_NOWARNINGS="yes" 
 COMPIZ=0
-NETWORK=1
-ATIURL="https://a248.e.akamai.net/f/674/9206/0/www2.ati.com/drivers/linux/"
-ATISRC="ati-driver-installer-8.36.5-x86.x86_64.run"
-#ping -c 1 ftp.debian.org 2>&1 /dev/null || NETWORK=0
+#NETWORK=$(ping -c 4 sidux.com 1>> /dev/null 2>> /dev/null)
+NETWORK=0
+autoaccept="0"
 
 # Reset fb color mode
 RESET="]R"
@@ -483,22 +516,19 @@ CYAN="[1;36m"
 # BOLD WHITE: Hint
 WHITE="[1;37m"
 
-echo "${BLUE}Script to install binary drivers for NVIDIA/ATI Graphics Cards${NORMAL}"
-echo ""
-
 if [ "$FLL_DISTRO_MODE" = "live" ]; then
-	echo "${RED}This Script is currently not working in livemode because of the broken restartx Package.${NORMAL}"
-	echo "Do you want to run it anyway?(yes/no)"
+	print_normal "${RED}This Script is currently not working in livemode because of the broken restartx Package.${NORMAL}"
+	print_normal "Do you want to run it anyway?(yes/no)"
 	read anyway
 	if [ ! "$anyway" = "yes" ]; then
 		exit 0
 	fi
-	echo ""
+	print_normal ""
 fi
 
 # We need 50MB free to build and install the Module
 if [ "$DISKFREE" -lt "50000" ]; then
-	echo "${RED}There is not enough Diskspace available to install/build a Kernel Module.${NORMAL}"
+	print_normal "${RED}There is not enough Diskspace available to install/build a Kernel Module.${NORMAL}"
 	exit 1
 fi
 
@@ -520,8 +550,8 @@ fi
 ARGS=$(
 	getopt \
 		--name "install-binary-gfx" \
-		--options ab:cduvh \
-		--long auto,build:,verbose,detect,help,update,compiz \
+		--options aAb:cdDuvh \
+		--long auto,accept,build:,verbose,debug,detect,help,update,compiz \
 		-- $@
 )
 
@@ -529,11 +559,14 @@ eval set -- "$ARGS"
 
 while true; do
 	case $1 in
-		-v|--verbose) 
+		-v|-D|--debug|--verbose) 
 			set -x
 			;;
 		-a|--auto) 
 			ibg_auto=1
+			;;
+		-A|--accept)
+			autoaccept="1"
 			;;
 		-b|--build) 
 			shift
@@ -542,6 +575,7 @@ while true; do
 			;;
 		-d|--detect) 
 			ibg_detect=1
+			autoaccept="1"
 			;;
 		-u|--update) 
 			update_me
@@ -566,6 +600,53 @@ while true; do
 	shift
 done
 
+if [ ! "$autoaccept" = "1" ]; then
+clear
+print_normal "${BLUE}Script to install binary drivers for NVIDIA/ATI Graphics Cards${NORMAL}"
+echo "${RED}"
+cat \
+<<EOF
+-----------
+DISCLAIMER:
+-----------
+
+This Script will install non-free Drivers for Nvidia and ATI GFX Cards.
+Please read there License Agreement before you use this Script.
+
+This Script will temporary use the contrib and non-free Repositorys
+from Debian and Sidux to install the Drivers.
+
+${WHITE}
+This program is free software; you can redistribute it and/or
+modify it under the terms of the GNU General Public License
+as published by the Free Software Foundation; either version 2
+of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with this package; if not, write to the Free Software 
+Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, 
+MA 02110-1301, USA.
+
+On Debian GNU/Linux systems, the text of the GPL license can be
+found in /usr/share/common-licenses/GPL.
+${RED}
+Use this Script at your own Risk!
+${NORMAL}
+
+EOF
+print_normal "${YELLOW}Do you agree (y/n)?${NORMAL}"
+read AGREE
+if [ ! "$AGREE" = "y" ]; then
+	print_normal "Aborting."
+	exit 1
+fi
+fi
+
 if [ "$ibg_detect" = 1 ]; then
 	detect_card
 	exit 0
@@ -573,8 +654,8 @@ fi
 
 
 if [ "$ibg_build" = 1 ]; then
-	[ "$NETWORK" = 0 ] && error 236
-	echo "${BLUE}Building $OPTARG${NORMAL}"
+	[ ! "$NETWORK" = 0 ] && error 236
+	print_normal "${BLUE}Building $OPTARG${NORMAL}"
 	MODTEST="FALSE"
 	BUILDONLY="TRUE"
 	[ $KMOD = "nvidia" ] && MODTEST="TRUE"
@@ -592,23 +673,39 @@ if [ "$ibg_build" = 1 ]; then
 fi
 
 if [ "$ibg_auto" = 1 ]; then
-	[ "$NETWORK" = 0 ] && error 236
+	[ ! "$NETWORK" = 0 ] && error 236
 	main
 	exit 0
 fi
 
 if [ "$COMPIZ" = 1 ]; then
+	[ ! "$NETWORK" = 0 ] && error 236
+	create_log
 	[ "$KMOD" = "none" ] && detect_card
 	if [ "$KMOD" =  "nvidia" ]; then
 		if [[ "$LOG" ]]; then
 			create_log
 		fi
-		echo "* ${BLUE}Installing compiz.${NORMAL}"
+		print_status "Installing compiz."
+		WMNAME="kde"
 		PACKAGES="compiz"
-		apt-get -y install $PACKAGES 1> /dev/null 2> /dev/null || error 234
-		echo "* ${GREEN}Compiz installed succesfully${NORMAL}"
+		WM=$(readlink /etc/alternatives/x-window-manager)
+		case $WM in
+			"/usr/bin/metacity")
+				WMNAME="gnome"
+				PACKAGES="$PACKAGES compiz-gnome"
+			;;
+			"/usr/bin/kde")
+				WMNAME="kde"
+				PACKAGES="$PACKAGES compiz-kde"
+			;;
+			*) echo test;;
+		esac
+
+		dpkg -l $PACKAGES 1>> /dev/null 2>> /dev/null || apt-get -y install $PACKAGES 1> /dev/null 2> /dev/null || error 234
+		print_status "Compiz installed succesfully"
 		cp /etc/X11/xorg.conf /etc/X11/xorg.compiz
-		echo "* ${BLUE}Enable Composite.${NORMAL}"
+		print_status "Enable Composite."
 		if [ $KMOD = "nvidia" ]; then
 			nvidia-xconfig -t | grep 'Option "AllowGLXWithComposite" "true"' > /dev/null || nvidia-xconfig --allow-glx-with-composite -s
 			nvidia-xconfig -t | grep 'Option "RenderAccel" "true"' > /dev/null || nvidia-xconfig --render-accel -s
@@ -642,7 +739,7 @@ if [ "$COMPIZ" = 1 ]; then
 			fi
 		fi
 	else
-		echo "* ${RED}No supported Card for compiz. Sorry.${NORMAL}"
+		print_normal "* ${RED}No supported Card for compiz. Sorry.${NORMAL}"
 	fi
 fi
 
