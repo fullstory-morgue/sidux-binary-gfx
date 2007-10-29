@@ -1,3 +1,9 @@
+sidux-binary-gfx (1.0.24) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Tue, 30 Oct 2007 00:08:23 +0100
+
 sidux-binary-gfx (1.0.23) unstable; urgency=low
 
   * fglrx-driver 8.42.3-2 claims to be 2.6.23 compatible (untested).
