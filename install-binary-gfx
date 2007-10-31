@@ -71,11 +71,12 @@ error()
 		232) ERR_D="devscripts Install failed !";;
 		231) ERR_D="Could not fetch Source Package !";;
 		230) ERR_D="Wrong md5 sum for $ATISRC !";;
+		229) ERR_D="hwinfo not found !";;
 		*) ERR_D="Unexpected Error !";;
 	esac
 	print_error "$ERR_C" "$ERR_D"
 	if [ ! -z $LOG ]; then # If we get an error before Log is created we just give it out to stdout.
-		print_normal "Check $LOG for details."
+		print_status "Check ${MAGENTA}$LOG${BLUE} for details."
 		echo "$DATE ERROR: ($ERR_C) $ERR_D" >> $LOG
 	fi
 	print_normal ""
@@ -87,6 +88,8 @@ error()
 
 create_log() 
 {
+	print_normal "Start Logging."
+	print_status "Create Log file."
 	# This Funktion is creating a new Logfile. It will overwrite previous Versions.
 	LOG="/var/log/sidux-$KMOD-installer.log"
 	# Delete old Logfile if exist.
@@ -103,6 +106,7 @@ create_log()
 
 install_source()
 {
+	print_normal "Installing Source for ${MAGENTA}$KMOD..."
 	if [ "$KMOD" = "nvidia" ]; then
 		apt-get -y --reinstall install nvidia-kernel-source module-assistant 1>> $LOG 2>> $LOG || error 240	
 	fi
@@ -116,6 +120,7 @@ install_source()
 
 prep() 
 {
+	print_normal "Preparing the source..."
 	# This Funktion will call m-a prepare and make sure the Kernel
 	# Headers and other required Packages are  installed.
 	# Write Log entry
@@ -168,15 +173,20 @@ prep()
 }
 
 patch_src() {
+	print_normal "Check for Patches..."
 	# This function is to patch the source
 	case $KMOD in
-		nvidia) ;;
-		nvidia-kernel-legacy) ;;
-		fglrx) ;;
+		nvidia) #print_status "Patch nvidia source"
+			;;
+		nvidia-kernel-legacy) #print_status "Patch nvidia-legacy source"
+			;;
+		fglrx) #print_status "Patch fglrx source"
+			;;
 	esac
 }
 
 build() {
+	print_normal "Building the Module..."
 	# We will create the Package now by using m-a. If the build fails we get the 
 	# Exitcode 250. 
 	print_status "Building ${MAGENTA}$KMOD ${BLUE}Module."
@@ -207,6 +217,7 @@ build() {
 
 install_deb() 
 {
+	print_normal "Install the Module..."
 	# The build should be fine and we are installing the created deb right now.
 	# First we have to get the Name of the File.
 	cd /usr/src
@@ -248,6 +259,7 @@ ATI_INST()
 
 write_xorg() 
 {
+	print_normal "Write new xorg.conf..."
 	# Changing the xorg.conf to use our brandnew installed Driver.
 	# We are creating a Backup by using date and time for the 
 	# Filename. Just in case the User will run the Script several
@@ -265,6 +277,9 @@ write_xorg()
 		apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
 		print_status "Running nvidia-xconfig to configure your xorg."
 		nvidia-xconfig -o /etc/X11/xorg.conf -s 1>> $LOG 2>> $LOG
+		if [ "$NOLOGO" = 1 ]; then
+			nvidia-xconfig --no-logo -o /etc/X11/xorg.conf -s 1>> $LOG 2>> $LOG
+		fi
 	fi
 	
 	# Changing entry's for nvidia-legacy using Perl oneliners.
@@ -273,6 +288,9 @@ write_xorg()
 		apt-get -fy install nvidia-xconfig nvidia-settings 1>> $LOG 2>> $LOG || error 241
 		print_status "Running nvidia-xconfig to configure your xorg."
                 nvidia-xconfig -o /etc/X11/xorg.conf -s 1>> $LOG 2>> $LOG
+		if [ "$NOLOGO" = 1 ]; then
+			nvidia-xconfig --no-logo -o /etc/X11/xorg.conf -s 1>> $LOG 2>> $LOG
+		fi
 	fi
 
 	# Changing entry's for fglrx using Perl oneliners.
@@ -323,37 +341,21 @@ nuke_me()
 	[ -f /etc/apt/sources.backup ] && cp /etc/apt/sources.backup /etc/apt/sources.list
 	rm -f /etc/apt/sources.backup 1>> /dev/null 2>> /dev/null 
 	[ "NETWORK" = 0 ] && apt-get update 2>&1 /dev/null
+	print_normal "Script finished."
+	print_normal ""
 }
 
 detect_card() 
 {
 	# Try to identify which kind of GFX Board we have
-	lspci | grep nVidia > /dev/null && KMOD="nvidia"
-	lspci | grep ATI > /dev/null && KMOD="fglrx"
-	print_status "Detecting GFX Cards"
-	# That option will show User the Card which will be detected by this Script
-	if [ "$KMOD" = "fglrx" ]; then
-		print_status "ATI Card found."
-		if [ -r /usr/share/sidux-binary-gfx/detect_aticard ]; then
-			print_normal ""
-			. /usr/share/sidux-binary-gfx/detect_aticard
-			print_normal ""
-		else
-			print_normal "/usr/share/sidux-binary-gfx/detect_aticard not found."
-			print_normal "Please check Installation of sidux-binary-gfx."
-			exit 1
-		fi
+	if [ -f "/usr/sbin/hwinfo" ]; then
+		print_normal "Detecting GFX Card..."
+		MODEL=$(hwinfo --gfxcard | grep Model | sed 's|Model:||' | sed 's|"||g' | sed 's|\s\s||g' | sed 's|\s||')
+		KMOD=$(hwinfo --gfxcard | grep "Server Module" | grep nvidia | sed 's|XFree86 v4 Server Module: ||' | sed 's|\s||g')
+		print_status "Detected Card: ${MAGENTA}$MODEL"
+		print_status "Kernel Module: ${MAGENTA}$KMOD"
 	else
-		print_status "NVIDIA Card found."
-		if [ -r /usr/share/sidux-binary-gfx/detect_nvcard ]; then
-			print_normal ""
-			. /usr/share/sidux-binary-gfx/detect_nvcard
-			print_normal ""
-		else
-			print_normal "/usr/share/sidux-binary-gfx/detect_nvcard not found."
-			print_normal "Please check Installation of sidux-binary-gfx."
-			exit 1
-		fi
+		error 229
 	fi
 }
 
@@ -377,6 +379,7 @@ help_me()
 	print_normal " -u | --update		Update Script"
 	print_normal " -v | --verbose		Verbose"
 	print_normal " -D | --debug		Debug (same as Verbose)"
+	print_normal " --no-logo		Disable NVIDIA LOGO (applies to NVIDIA only)"
 	print_normal ""
 	print_normal "${BLUE}Examples:${NORMAL}"
 	print_normal "${MAGENTA}install-binary-gfx -a${NORMAL} (This will detect you Card and install the sid Drivers automatically.)"
@@ -441,15 +444,15 @@ update_me()
 {
 	[ ! "$NETWORK" = 0 ] && error 236
 	CVERSION=$(apt-cache policy sidux-binary-gfx | grep \* | awk '{print $2}')
-	print_normal "${BLUE}Updating Script${NORMAL}"
+	print_normal "Updating Script..."
 	print_normal ""
-	print_normal "Current Version: ${BLUE}$CVERSION${NORMAL}"
+	print_status "Current Version: ${MAGENTA}$CVERSION"
 	# This will update the Script
 	create_log
 	sources_backup
 	apt-get -y upgrade sidux-scripts sidux-binary-gfx 1>> $LOG 2>> $LOG || error 248
 	UVERSION=$(apt-cache policy sidux-binary-gfx | grep \* | awk '{print $2}')
-	print_normal "Updated to: ${BLUE}$UVERSION${NORMAL}"
+	print_status "Updated to: ${MAGENTA}$UVERSION$"
 	sources_restore
 	clean_up
 }
@@ -481,7 +484,6 @@ DISKFILTER=$(df -k /usr/src | awk '{print $6}' | grep \/)
 DISKFREE=$(df -k /usr/src | grep $DISKFILTER | awk '{print $2}')
 EXPERIMENTAL=0
 ibg_detect=0
-ibg_detect=0
 ibg_auto=0
 DEBIAN_FRONTEND="noninteractive"
 DEBIAN_PRIORITY="critical" 
@@ -490,6 +492,8 @@ COMPIZ=0
 #NETWORK=$(ping -c 4 sidux.com 1>> /dev/null 2>> /dev/null)
 NETWORK=0
 autoaccept="0"
+NOLOGO=0
+CACHE=0
 
 # Reset fb color mode
 RESET="]R"
@@ -551,7 +555,7 @@ ARGS=$(
 	getopt \
 		--name "install-binary-gfx" \
 		--options aAb:cdDuvh \
-		--long auto,accept,build:,verbose,debug,detect,help,update,compiz \
+		--long auto,accept,build:,verbose,debug,detect,help,update,compiz,no-logo \
 		-- $@
 )
 
@@ -561,6 +565,9 @@ while true; do
 	case $1 in
 		-v|-D|--debug|--verbose) 
 			set -x
+			;;
+		--no-logo)
+			NOLOGO=1
 			;;
 		-a|--auto) 
 			ibg_auto=1
@@ -646,6 +653,10 @@ if [ ! "$AGREE" = "y" ]; then
 	exit 1
 fi
 fi
+
+print_title "$0"
+print_normal "Script to install binary GFX Drivers for sidux."
+print_normal ""
 
 if [ "$ibg_detect" = 1 ]; then
 	detect_card
