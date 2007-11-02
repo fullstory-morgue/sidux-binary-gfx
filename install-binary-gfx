@@ -36,7 +36,7 @@ print_sum()
 
 print_error()
 {
-	echo "${RED}! ERROR: ($1)${NORMAL} ${BLUE}$2${NORMAL}"
+	echo " ${RED}! ERROR: ($1)${NORMAL} ${BLUE}$2${NORMAL}"
 }
 
 error() 
@@ -80,7 +80,7 @@ error()
 		echo "$DATE ERROR: ($ERR_C) $ERR_D" >> $LOG
 	fi
 	print_normal ""
-	print_status "Cleaning up. Please wait."
+	print_normal "Cleaning up. Please wait."
 	# If we are in verbose Mode print out the Log File.
 	[ $VERBOSE = 1 ] && cat $LOG
 	exit $ERR_C
@@ -88,6 +88,7 @@ error()
 
 create_log() 
 {
+	print_normal ""
 	print_normal "Start Logging."
 	print_status "Create Log file."
 	# This Funktion is creating a new Logfile. It will overwrite previous Versions.
@@ -106,6 +107,7 @@ create_log()
 
 install_source()
 {
+	print_normal ""
 	print_normal "Installing Source for ${MAGENTA}$KMOD..."
 	if [ "$KMOD" = "nvidia" ]; then
 		apt-get -y --reinstall install nvidia-kernel-source module-assistant 1>> $LOG 2>> $LOG || error 240	
@@ -120,6 +122,7 @@ install_source()
 
 prep() 
 {
+	print_normal ""
 	print_normal "Preparing the source..."
 	# This Funktion will call m-a prepare and make sure the Kernel
 	# Headers and other required Packages are  installed.
@@ -173,6 +176,7 @@ prep()
 }
 
 patch_src() {
+	print_normal ""
 	print_normal "Check for Patches..."
 	# This function is to patch the source
 	case $KMOD in
@@ -186,6 +190,7 @@ patch_src() {
 }
 
 build() {
+	print_normal ""
 	print_normal "Building the Module..."
 	# We will create the Package now by using m-a. If the build fails we get the 
 	# Exitcode 250. 
@@ -217,6 +222,7 @@ build() {
 
 install_deb() 
 {
+	print_normal ""
 	print_normal "Install the Module..."
 	# The build should be fine and we are installing the created deb right now.
 	# First we have to get the Name of the File.
@@ -259,6 +265,7 @@ ATI_INST()
 
 write_xorg() 
 {
+	print_normal ""
 	print_normal "Write new xorg.conf..."
 	# Changing the xorg.conf to use our brandnew installed Driver.
 	# We are creating a Backup by using date and time for the 
@@ -304,8 +311,12 @@ write_xorg()
 }
 
 sources_backup() {
+	print_normal ""
+	print_normal "Backing up ${MAGENTRA}sources.list..."
 	# Backup sources.list and create the temporary config with contrib and non-free repos
+	print_status "Copy ${MAGENTA}/etc/apt/sources.list${BLUE} to ${MAGENTA}/etc/apt/sources.backup"
 	cp /etc/apt/sources.list /etc/apt/sources.backup
+	print_status "Creating temporary sources.list"
 	echo "deb http://ftp.nl.debian.org/debian/ sid main contrib non-free" > "/etc/apt/sources.list" 
 	echo "deb http://sidux.com/debian/ sid main fix.main contrib non-free" >> "/etc/apt/sources.list"
 	print_status "Running apt-get update."
@@ -314,7 +325,10 @@ sources_backup() {
 
 sources_restore() 
 {
+	print_normal ""
+	print_normal "Restoring original ${MAGENTRA}sources.list..."
 	# Restoring original sources.list
+	print_status "Copy ${MAGENTA}/etc/apt/sources.backup${BLUE} to ${MAGENTA}/etc/apt/sources.list"
 	cp /etc/apt/sources.backup /etc/apt/sources.list 1>> $LOG 2>> $LOG
 }
 
@@ -322,7 +336,9 @@ clean_up()
 {
 	[ ! "$NETWORK" = 0 ] && error 236
 	# Run apt-get update to avoid apt error messages
-	print_status "Cleaning up. Please wait."
+	print_normal ""
+	print_normal "Cleaning up. Please wait..."
+	print_status "Run ${MAGENTA}apt-get update${BLUE} to rebuild the apt cache."
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
@@ -341,6 +357,7 @@ nuke_me()
 	[ -f /etc/apt/sources.backup ] && cp /etc/apt/sources.backup /etc/apt/sources.list
 	rm -f /etc/apt/sources.backup 1>> /dev/null 2>> /dev/null 
 	[ "NETWORK" = 0 ] && apt-get update 2>&1 /dev/null
+	print_normal ""
 	print_normal "Script finished."
 	print_normal ""
 }
@@ -349,6 +366,7 @@ detect_card()
 {
 	# Try to identify which kind of GFX Board we have
 	if [ -f "/usr/sbin/hwinfo" ]; then
+		print_normal ""
 		print_normal "Detecting GFX Card..."
 		MODEL=$(hwinfo --gfxcard | grep Model | sed 's|Model:||' | sed 's|"||g' | sed 's|\s\s||g' | sed 's|\s||')
 		KMOD=$(hwinfo --gfxcard | grep "Server Module" | grep nvidia | sed 's|XFree86 v4 Server Module: ||' | sed 's|\s||g')
@@ -444,6 +462,7 @@ update_me()
 {
 	[ ! "$NETWORK" = 0 ] && error 236
 	CVERSION=$(apt-cache policy sidux-binary-gfx | grep \* | awk '{print $2}')
+	print_normal ""
 	print_normal "Updating Script..."
 	print_normal ""
 	print_status "Current Version: ${MAGENTA}$CVERSION"
@@ -519,6 +538,11 @@ MAGENTA="[1;35m"
 CYAN="[1;36m"
 # BOLD WHITE: Hint
 WHITE="[1;37m"
+
+#if [ ! -z "$DISPLAY" ]; then
+#	chvt -t 1 
+#	CHGDISP=1
+#fi
 
 if [ "$FLL_DISTRO_MODE" = "live" ]; then
 	print_normal "${RED}This Script is currently not working in livemode because of the broken restartx Package.${NORMAL}"
@@ -609,7 +633,7 @@ done
 
 if [ ! "$autoaccept" = "1" ]; then
 clear
-print_normal "${BLUE}Script to install binary drivers for NVIDIA/ATI Graphics Cards${NORMAL}"
+print_normal "Script to install binary drivers for ${MAGENTA}NVIDIA/ATI${BLUE} Graphics Cards"
 echo "${RED}"
 cat \
 <<EOF
@@ -656,7 +680,6 @@ fi
 
 print_title "$0"
 print_normal "Script to install binary GFX Drivers for sidux."
-print_normal ""
 
 if [ "$ibg_detect" = 1 ]; then
 	detect_card

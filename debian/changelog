@@ -3,7 +3,7 @@ sidux-binary-gfx (1.0.24) UNRELEASED; urgency=low
   [ Stefan Lippers-Hollmann ]
   * NOT RELEASED YET
 
-  [ webera ]
+  [ webera ] DO NOT RELEASE!!!
   * Output enhanced. 
   * Detection changed to use hwinfo. 
 
