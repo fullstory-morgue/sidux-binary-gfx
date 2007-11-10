@@ -3,11 +3,12 @@ sidux-binary-gfx (1.0.24) UNRELEASED; urgency=low
   [ Stefan Lippers-Hollmann ]
   * NOT RELEASED YET
 
-  [ webera ] DO NOT RELEASE!!!
-  * Output enhanced. 
-  * Detection changed to use hwinfo. 
+  [ webera ] DO NOT RELEASE!!! Still need to test detection for nvidia-legacy
+  * Output enhanced.
+  * Detection changed to use hwinfo.
+  * help fixed.
 
- -- Andreas Weber <andreas@it-weber.com>  Wed, 31 Oct 2007 20:46:50 +0100
+ -- Andreas Weber <andreas@it-weber.com>  Sat, 10 Nov 2007 20:24:06 +0100
 
 sidux-binary-gfx (1.0.23) unstable; urgency=low
 

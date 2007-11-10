@@ -369,7 +369,13 @@ detect_card()
 		print_normal ""
 		print_normal "Detecting GFX Card..."
 		MODEL=$(hwinfo --gfxcard | grep Model | sed 's|Model:||' | sed 's|"||g' | sed 's|\s\s||g' | sed 's|\s||')
-		KMOD=$(hwinfo --gfxcard | grep "Server Module" | grep nvidia | sed 's|XFree86 v4 Server Module: ||' | sed 's|\s||g')
+		KMOD=$(hwinfo --gfxcard | grep "Server Module" | awk -F: '{print $2}' | sed 's|\s||')
+		for module in ${KMOD[@]}
+		do
+			[ "$module" = "nvidia" ] && KMOD="nvidia"
+			[ "$module" = "nvidia" ] && KMOD="nvidia"
+			[ "$module" = "radeon" ] && KMOD="fglrx"
+		done
 		print_status "Detected Card: ${MAGENTA}$MODEL"
 		print_status "Kernel Module: ${MAGENTA}$KMOD"
 	else
@@ -403,8 +409,7 @@ help_me()
 	print_normal "${MAGENTA}install-binary-gfx -a${NORMAL} (This will detect you Card and install the sid Drivers automatically.)"
 	print_normal "${MAGENTA}install-binary-gfx -b nvidia${NORMAL} (This will just build the nvidia-module....deb in /usr/src. The same works with fglrx and nvidia-legacy.)"
 	print_normal "${MAGENTA}install-binary-gfx -d${NORMAL} (This will detect your Card and just print out the Information.)"
-	print_normal "${MAGENTA}install-binary-gfx -u${NORMAL} (This will update this Script. Please note that will not be done by dist-upgrade as long as you"
-	print_normal "                       have contrib for the sidux repository activated in your sources.list.)"
+	print_normal "${MAGENTA}install-binary-gfx -u${NORMAL} (This will update this Script.)"
 	print_normal ""
 	print_normal "${BLUE}Troubleshooting:${NORMAL}"
 	print_normal "If the Script fails for your Card please run the Script in debug mode and post the output as well as the log file"
