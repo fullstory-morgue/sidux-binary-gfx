@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.24) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.24) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ webera ] 
   * Output enhanced.
   * Detection changed to use hwinfo.
   * help fixed.
