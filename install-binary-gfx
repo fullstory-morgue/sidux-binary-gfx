@@ -370,11 +370,38 @@ detect_card()
 		print_normal "Detecting GFX Card..."
 		MODEL=$(hwinfo --gfxcard | grep Model | sed 's|Model:||' | sed 's|"||g' | sed 's|\s\s||g' | sed 's|\s||')
 		KMOD=$(hwinfo --gfxcard | grep "Server Module" | awk -F: '{print $2}' | sed 's|\s||')
+		DEVICE=$(hwinfo --gfxcard | grep " Device:" | awk '{print $3}')
 		for module in ${KMOD[@]}
 		do
-			[ "$module" = "nvidia" ] && KMOD="nvidia"
-			[ "$module" = "nvidia-kernel-legacy" ] && KMOD="nvidia-kernel-legacy"
-			[ "$module" = "radeon" ] && KMOD="fglrx"
+			if [ "$module" = "nvidia" ]; then 
+				KMOD="nvidia"
+				# Detecting Cards which requires the legacy Driver
+				ID1=$(lspci -nn | grep "VGA\ compatible\ controller" | cut -d ' ' -f 1)
+				ID2=$(lspci -n | grep $ID1 | cut -d ' ' -f 3)
+				ID3=$(echo $ID2 | cut -d ':' -f 2 | tr '[a-z]' '[A-Z]')
+				case $ID3 in
+					0020) KMOD="nvidia-kernel-legacy";;
+					0028) KMOD="nvidia-kernel-legacy";;
+					0029) KMOD="nvidia-kernel-legacy";;
+					00A0) KMOD="nvidia-kernel-legacy";;
+					002D) KMOD="nvidia-kernel-legacy";;
+					0100) KMOD="nvidia-kernel-legacy";;
+					0101) KMOD="nvidia-kernel-legacy";;
+					0110) KMOD="nvidia-kernel-legacy";;
+					0111) KMOD="nvidia-kernel-legacy";;
+					0112) KMOD="nvidia-kernel-legacy";;
+					0151) KMOD="nvidia-kernel-legacy";;
+					0152) KMOD="nvidia-kernel-legacy";;
+					002C) KMOD="nvidia-kernel-legacy";;
+					0103) KMOD="nvidia-kernel-legacy";;
+					0113) KMOD="nvidia-kernel-legacy";;
+					0150) KMOD="nvidia-kernel-legacy";;
+					0153) KMOD="nvidia-kernel-legacy";;
+				esac
+			fi
+			if [ "$module" = "radeon" ]; then
+				KMOD="fglrx"
+			fi
 		done
 		print_status "Detected Card: ${MAGENTA}$MODEL"
 		print_status "Kernel Module: ${MAGENTA}$KMOD"
