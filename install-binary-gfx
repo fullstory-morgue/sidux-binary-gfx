@@ -373,7 +373,7 @@ detect_card()
 		for module in ${KMOD[@]}
 		do
 			[ "$module" = "nvidia" ] && KMOD="nvidia"
-			[ "$module" = "nvidia" ] && KMOD="nvidia"
+			[ "$module" = "nvidia-kernel-legacy" ] && KMOD="nvidia-kernel-legacy"
 			[ "$module" = "radeon" ] && KMOD="fglrx"
 		done
 		print_status "Detected Card: ${MAGENTA}$MODEL"
