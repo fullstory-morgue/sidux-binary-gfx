@@ -1,3 +1,9 @@
+sidux-binary-gfx (1.0.26) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Thu, 29 Nov 2007 21:26:51 +0100
+
 sidux-binary-gfx (1.0.25) unstable; urgency=low
 
   * change fallback default to FLL_IMAGE_DIR="sidux".
