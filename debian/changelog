@@ -1,3 +1,9 @@
+sidux-binary-gfx (1.0.27) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Sat, 08 Dec 2007 23:49:44 +0100
+
 sidux-binary-gfx (1.0.26) unstable; urgency=low
 
   * update to Standards-Version 3.7.3, no changes necessary.
