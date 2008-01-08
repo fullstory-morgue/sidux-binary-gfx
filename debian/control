@@ -9,7 +9,8 @@ Vcs-Browser: http://svn.berlios.de/wsvn/fullstory/sidux-binary-gfx/trunk/
 
 Package: sidux-binary-gfx
 Architecture: all
-Depends: ${shlibs:Depends}, ${misc:Depends}, hwinfo 
+Depends: ${shlibs:Depends}, ${misc:Depends}, hwinfo
+Recommends: menu
 Description: build and install nvidia/ati kernel modules
  This package will help user to create and install nvidia/ati binary drivers
  and take care about xorg configuration.

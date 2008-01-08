@@ -510,9 +510,8 @@ update_me()
 
 # We have to be root. Oherwise we exit with exitcode 1
 if [ "$(id -u)" -ne 0 ]; then
-	[ -x /usr/bin/su-me ] && DISPLAY="" exec su-me "$0" "$@"
-
-	print_normal "${RED}Error: You must be root to run this script!${NORMAL}"
+	[ -x "$(which su-to-root)" ] && exec su-to-root -c "$0" "$@"
+	printf "ERROR: $0 needs root capabilities, please start it as root.\n\n" >&2
 	exit 1
 fi
 
