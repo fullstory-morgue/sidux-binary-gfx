@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.28) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.28) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Fabian Wuertz ]
   * Color from yellow to red changed ("Do you agree?" question). For a better
     readability in siduxcc)
 
