@@ -701,7 +701,7 @@ Use this Script at your own Risk!
 ${NORMAL}
 
 EOF
-print_normal "${YELLOW}Do you agree (y/n)?${NORMAL}"
+print_normal "${RED}Do you agree (y/n)?${NORMAL}"
 read AGREE
 if [ ! "$AGREE" = "y" ]; then
 	print_normal "Aborting."
