@@ -1,9 +1,8 @@
-sidux-binary-gfx (1.0.30) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.30) unstable; urgency=low
 
-  * NOT RELEASED YET
   * we don't need dpatch anymore.
 
- -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Sat, 19 Jan 2008 02:13:30 +0100
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Sat, 19 Jan 2008 22:21:35 +0100
 
 sidux-binary-gfx (1.0.29) unstable; urgency=low
 
