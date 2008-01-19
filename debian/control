@@ -2,7 +2,8 @@ Source: sidux-binary-gfx
 Section: contrib/x11
 Priority: extra
 Maintainer: Andreas Weber <andreas@it-weber.com>
-Build-Depends: cdbs, debhelper (>= 5), dpatch
+Uploaders: Stefan Lippers-Hollmann <s.l-h@gmx.de>
+Build-Depends: cdbs, debhelper (>= 6), dpatch
 Standards-Version: 3.7.3
 Vcs-Svn: svn://svn.berlios.de/fullstory/sidux-binary-gfx/trunk
 Vcs-Browser: http://svn.berlios.de/wsvn/fullstory/sidux-binary-gfx/trunk/
