@@ -1,8 +1,8 @@
-sidux-binary-gfx (1.0.32) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.32) unstable; urgency=low
 
-  * NOT RELEASED YET
+  * switch to the new dh implementation of debhelper 7.
 
- -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Thu, 21 Feb 2008 00:45:13 +0100
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Wed, 21 May 2008 20:23:29 +0200
 
 sidux-binary-gfx (1.0.31) unstable; urgency=low
 
