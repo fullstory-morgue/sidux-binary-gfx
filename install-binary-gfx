@@ -107,10 +107,10 @@ create_log()
 
 aptcmd()
 {
-	if [ $experimental == 1 ]; then
-		apt-get -y --reinstall install experimental/$1
+	if [ $experimental = 1 ]; then
+		apt-get -y --reinstall install experimental/$1 1>> $LOG 2>> $LOG
 	else
-		apt-get -y --reinstall install $1
+		apt-get -y --reinstall install $1 1>> $LOG 2>> $LOG
 	fi
 }
 
@@ -314,7 +314,7 @@ write_xorg()
 	fi
 
 	# Changing entry's for fglrx using Perl oneliners.
-	if [ $KMOD == "fglrx" ]; then
+	if [ $KMOD = "fglrx" ]; then
 		# The Perl oneliners are just a Fallback in case aticonfig will fail
 		#apt-get -fy install fglrx-driver fglrx-control 1>> $LOG 2>> $LOG || error 241
 		aptcmd "fglrx-control"
@@ -327,12 +327,12 @@ sources_backup() {
 	print_normal ""
 	print_normal "Checking ${MAGENTRA}sources.list.d for contrib and non-free Mirrors..."
 	grep "non-free" /etc/apt/sources.list.d/debian.list 1>> /dev/null 2>> /dev/null || listok = "false"
-	if [ "listok" == "false" ]; then
+	if [ "listok" = "false" ]; then
 		print_status "Creating ${MAGENTRA}/etc/apt/sources.list.d/gfx"
 		echo "deb http://ftp.debian.org/debian/ sid contrib non-free" > "/etc/apt/sources.list.d/gfx" 
 		echo "deb http://sidux.com/debian/ sid contrib fix.contrib non-free fix.non-free" >> "/etc/apt/sources.list.d/gfx"
 	fi
-	if [ "$experimental" == 1 ]; then
+	if [ "$experimental" = 1 ]; then
 		echo "deb http://ftp.de.debian.org/debian/ experimental main non-free contrib" > "/etc/apt/sources.list.d/experimental"	
 	fi
 	print_status "Running apt-get update."
@@ -342,7 +342,7 @@ sources_backup() {
 sources_restore() 
 {
 	if [ -f "/etc/apt/sources.list.d/gfx" ]; then
-		if [ $keepsrc == 0 ]; then		
+		if [ $keepsrc = 0 ]; then		
 			print_normal ""
 			print_normal "Cleaning up ${MAGENTRA}/etc/apt/sources.list.d/..."
 			print_status "Deleting ${MAGENTRA}/etc/apt/sources.list.d/gfx"
@@ -387,9 +387,10 @@ detect_card()
 		print_normal ""
 		print_normal "Detecting GFX Card..."
 		MODEL=$(hwinfo --gfxcard | grep Model | sed 's|Model:||' | sed 's|"||g' | sed 's|\s\s||g' | sed 's|\s||')
-		KMOD=$(hwinfo --gfxcard | grep "Server Module" | awk -F: '{print $2}' | sed 's|\s||')
+		KMOD=$(hwinfo --gfxcard | grep "Driver Status:" | awk -F: '{print $2}' | sed 's|\s||' | awk '{print $1}')
+		#KMOD=$(hwinfo --gfxcard | grep "Server Module" | awk -F: '{print $2}' | sed 's|\s||')
 		DEVICE=$(hwinfo --gfxcard | grep " Device:" | awk '{print $3}')
-		for module in ${KMOD[@]}
+		for module in $KMOD
 		do
 			if [ "$module" = "nvidia" ]; then 
 				KMOD="nvidia"

@@ -3,13 +3,14 @@ sidux-binary-gfx (1.0.33) UNRELEASED; urgency=low
   [ Stefan Lippers-Hollmann ]
   * NOT RELEASED YET
 
-  [ webera ]
+  [ Andreas Weber ]
   * DO NOT UPLOAD
   * Apt sources changed.
   * experimental added.
   * Keep sources added.
+  * Detection fixed (new hwinfo)
 
- -- webera <webera@tp-webera>  Fri, 30 May 2008 22:54:03 +0200
+ -- Andreas Weber <andreas@it-weber.com>  Fri, 30 May 2008 23:24:46 +0200
 
 sidux-binary-gfx (1.0.32) unstable; urgency=low
 
