@@ -1,3 +1,9 @@
+sidux-binary-gfx (1.0.34) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Stefan Lippers-Hollmann <s.l-h@gmx.de>  Sat, 31 May 2008 00:03:07 +0200
+
 sidux-binary-gfx (1.0.33) unstable; urgency=low
 
   * Apt sources changed.
