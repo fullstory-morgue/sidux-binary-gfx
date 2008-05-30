@@ -105,18 +105,30 @@ create_log()
 	echo "" >> $LOG
 }
 
+aptcmd()
+{
+	if [ $experimental == 1 ]; then
+		apt-get -y --reinstall install experimental/$1
+	else
+		apt-get -y --reinstall install $1
+	fi
+}
+
 install_source()
 {
 	print_normal ""
 	print_normal "Installing Source for ${MAGENTA}$KMOD..."
 	if [ "$KMOD" = "nvidia" ]; then
-		apt-get -y --reinstall install nvidia-kernel-source module-assistant 1>> $LOG 2>> $LOG || error 240	
-	fi
+		aptcmd "nvidia-kernel-source"
+		apt-get -y --reinstall install  module-assistant 1>> $LOG 2>> $LOG || error 240	
+	fi 
 	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
-		apt-get -y --reinstall install nvidia-kernel-legacy-source module-assistant 1>> $LOG 2>> $LOG || error 239		
+		aptcmd "nvidia-kernel-legacy-source"
+		apt-get -y --reinstall install module-assistant 1>> $LOG 2>> $LOG || error 239		
 	fi
 	if [ "$KMOD" = "fglrx" ]; then
-		apt-get -y --reinstall install fglrx-kernel-src module-assistant 1>> $LOG 2>> $LOG || error 238	
+		aptcmd "fglrx-kernel-src"
+		apt-get -y --reinstall install module-assistant 1>> $LOG 2>> $LOG || error 238	
 	fi
 }
 
@@ -204,11 +216,11 @@ build() {
 			# The legacy Driver needs a hack on the Source / Headers
 			ln -s /usr/src/linux/include/linux/autoconf.h /usr/src/linux/include/linux/config.h 1>> $LOG 2>> $LOG
 			# We have to make sure nvidia-kernel-common is installed
-			apt-get -y install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
+			aptcmd "nvidia-kernel-common"
 		fi
 		if [ "$KMOD" = "nvidia" ]; then
 			# We have to make sure nvidia-kernel-common is installed
-			apt-get -y install nvidia-kernel-common 1>> $LOG 2>> $LOG || error 242
+			aptcmd "nvidia-kernel-common"
 		fi
 	fi
 	
@@ -244,11 +256,11 @@ install_deb()
 	fi	
 	if [ "$KMOD" = "nvidia-kernel-legacy" ]; then
 		# We have to install nvidia-glx to get the Driver working
-		apt-get -y install nvidia-glx-legacy 1>> $LOG 2>> $LOG || error 243
+		aptcmd "nvidia-glx-legacy"
 	fi
 	if [ "$KMOD" = "nvidia" ]; then
 		# We have to install nvidia-glx to get the Driver working
-		apt-get -y install nvidia-glx 1>> $LOG 2>> $LOG || error 243
+		aptcmd "nvidia-glx"
 	fi
 }
 
@@ -281,7 +293,7 @@ write_xorg()
 	# Changing entry's for nvidia using Perl oneliners.
 	if [ $KMOD = "nvidia" ]; then
 		# The Perl oneliners are just a Fallback in case nvidia-xconfig will fail to install
-		apt-get -fy install nvidia-xconfig 1>> $LOG 2>> $LOG || error 241
+		aptcmd "nvidia-xconfig"
 		print_status "Running nvidia-xconfig to configure your xorg."
 		nvidia-xconfig -o /etc/X11/xorg.conf -s 1>> $LOG 2>> $LOG
 		if [ "$NOLOGO" = 1 ]; then
@@ -292,7 +304,8 @@ write_xorg()
 	# Changing entry's for nvidia-legacy using Perl oneliners.
 	if [ $KMOD = "nvidia-kernel-legacy" ]; then
 		# The Perl oneliners are just a Fallback in case nvidia-xconfig will fail to install
-		apt-get -fy install nvidia-xconfig nvidia-settings 1>> $LOG 2>> $LOG || error 241
+		aptcmd "nvidia-xconfig"
+		aptcmd "nvidia-settings"
 		print_status "Running nvidia-xconfig to configure your xorg."
                 nvidia-xconfig -o /etc/X11/xorg.conf -s 1>> $LOG 2>> $LOG
 		if [ "$NOLOGO" = 1 ]; then
@@ -304,7 +317,7 @@ write_xorg()
 	if [ $KMOD == "fglrx" ]; then
 		# The Perl oneliners are just a Fallback in case aticonfig will fail
 		#apt-get -fy install fglrx-driver fglrx-control 1>> $LOG 2>> $LOG || error 241
-		apt-get -fy install fglrx-control 1>> $LOG 2>> $LOG || error 241
+		aptcmd "fglrx-control"
 		print_status "Running aticonfig to configure your xorg."
 		aticonfig --initial --input=/etc/X11/xorg.conf --output=/etc/X11/xorg.conf 1>> $LOG 2>> $LOG
 	fi
@@ -312,24 +325,30 @@ write_xorg()
 
 sources_backup() {
 	print_normal ""
-	print_normal "Backing up ${MAGENTRA}sources.list..."
-	# Backup sources.list and create the temporary config with contrib and non-free repos
-	print_status "Copy ${MAGENTA}/etc/apt/sources.list${BLUE} to ${MAGENTA}/etc/apt/sources.backup"
-	cp /etc/apt/sources.list /etc/apt/sources.backup
-	print_status "Creating temporary sources.list"
-	echo "deb http://ftp.nl.debian.org/debian/ sid main contrib non-free" > "/etc/apt/sources.list" 
-	echo "deb http://sidux.com/debian/ sid main fix.main contrib non-free" >> "/etc/apt/sources.list"
+	print_normal "Checking ${MAGENTRA}sources.list.d for contrib and non-free Mirrors..."
+	grep "non-free" /etc/apt/sources.list.d/debian.list 1>> /dev/null 2>> /dev/null || listok = "false"
+	if [ "listok" == "false" ]; then
+		print_status "Creating ${MAGENTRA}/etc/apt/sources.list.d/gfx"
+		echo "deb http://ftp.debian.org/debian/ sid contrib non-free" > "/etc/apt/sources.list.d/gfx" 
+		echo "deb http://sidux.com/debian/ sid contrib fix.contrib non-free fix.non-free" >> "/etc/apt/sources.list.d/gfx"
+	fi
+	if [ "$experimental" == 1 ]; then
+		echo "deb http://ftp.de.debian.org/debian/ experimental main non-free contrib" > "/etc/apt/sources.list.d/experimental"	
+	fi
 	print_status "Running apt-get update."
 	apt-get update 1>> /dev/null 2>> /dev/null || error 245
 }
 
 sources_restore() 
 {
-	print_normal ""
-	print_normal "Restoring original ${MAGENTRA}sources.list..."
-	# Restoring original sources.list
-	print_status "Copy ${MAGENTA}/etc/apt/sources.backup${BLUE} to ${MAGENTA}/etc/apt/sources.list"
-	cp /etc/apt/sources.backup /etc/apt/sources.list 1>> $LOG 2>> $LOG
+	if [ -f "/etc/apt/sources.list.d/gfx" ]; then
+		if [ $keepsrc == 0 ]; then		
+			print_normal ""
+			print_normal "Cleaning up ${MAGENTRA}/etc/apt/sources.list.d/..."
+			print_status "Deleting ${MAGENTRA}/etc/apt/sources.list.d/gfx"
+			rm -f /etc/apt/sources.list.d/gfx 1>> $LOG 2>> $LOG
+		fi
+	fi
 }
 
 clean_up() 
@@ -354,8 +373,7 @@ install_me()
 nuke_me() 
 {
 	# If someone is pressing STRG+C we restore backed up sources.list before we left
-	[ -f /etc/apt/sources.backup ] && cp /etc/apt/sources.backup /etc/apt/sources.list
-	rm -f /etc/apt/sources.backup 1>> /dev/null 2>> /dev/null 
+	sources_restore
 	[ "NETWORK" = 0 ] && apt-get update 2>&1 /dev/null
 	print_normal ""
 	print_normal "Script finished."
@@ -427,6 +445,8 @@ help_me()
 	print_normal " -A | --accept		Accept Disclaimer automatically (Please read it once)"
 	print_normal " -b | --build 		MOD Build only (nvidia|nvidia-legacy|fglrx)"
 	print_normal " -d | --detect		Detect Card only"
+	print_normal " -e | --experimental	Use Debian experimental"
+	print_normal " -k | --keep		Keep changes on /etc/apt/sources.list.d"
 	print_normal " -u | --update		Update Script"
 	print_normal " -v | --verbose		Verbose"
 	print_normal " -D | --debug		Debug (same as Verbose)"
@@ -535,6 +555,8 @@ DISKFREE=$(df -k /usr/src | grep $DISKFILTER | awk '{print $2}')
 EXPERIMENTAL=0
 ibg_detect=0
 ibg_auto=0
+keepsrc=0
+experimental=0
 DEBIAN_FRONTEND="noninteractive"
 DEBIAN_PRIORITY="critical" 
 DEBCONF_NOWARNINGS="yes" 
@@ -609,8 +631,8 @@ fi
 ARGS=$(
 	getopt \
 		--name "install-binary-gfx" \
-		--options aAb:cdDuvh \
-		--long auto,accept,build:,verbose,debug,detect,help,update,compiz,no-logo \
+		--options aAb:cdDekuvh \
+		--long auto,accept,build:,verbose,debug,detect,experimental,keep,help,update,compiz,no-logo \
 		-- $@
 )
 
@@ -638,6 +660,12 @@ while true; do
 		-d|--detect) 
 			ibg_detect=1
 			autoaccept="1"
+			;;
+		-e|--experimental)
+			experimental=1
+			;;
+		-k|--keep)
+			keepsrc=1
 			;;
 		-u|--update) 
 			update_me
