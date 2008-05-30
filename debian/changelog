@@ -1,9 +1,5 @@
-sidux-binary-gfx (1.0.33) UNRELEASED; urgency=low
+sidux-binary-gfx (1.0.33) unstable; urgency=low
 
-  [ Stefan Lippers-Hollmann ]
-  * NOT RELEASED YET
-
-  [ Andreas Weber ]
   * Apt sources changed.
   * experimental added.
   * Keep sources added.
